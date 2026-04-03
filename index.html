@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Kumar Industries — NPD Tracker</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#ffffff;--bg2:#f6f6f4;--bg3:#eeede9;
+  --text:#1a1a1a;--text2:#5c5c58;--text3:#9c9c96;
+  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.18);
+  --blue:#185FA5;--blue-lt:#E6F1FB;--blue-dk:#0C447C;
+  --green:#3B6D11;--green-lt:#EAF3DE;
+  --amber:#BA7517;--amber-lt:#FAEEDA;
+  --red:#A32D2D;--red-lt:#FCEBEB;
+  --purple:#534AB7;--purple-lt:#EEEDFE;
+  --teal:#0F6E56;--teal-lt:#E1F5EE;
+  --r:10px;--rl:14px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh;}
+
+/* LOGIN */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0C447C 0%,#185FA5 50%,#1a7abf 100%);}
+.login-card{background:white;border-radius:16px;padding:2.5rem;width:380px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+.login-logo{width:48px;height:48px;background:var(--blue);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;}
+.login-logo svg{width:28px;height:28px;}
+.login-title{font-size:18px;font-weight:700;text-align:center;margin-bottom:4px;}
+.login-sub{font-size:12px;color:var(--text2);text-align:center;margin-bottom:1.5rem;}
+.login-field{margin-bottom:14px;}
+.login-label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:5px;}
+.login-input{width:100%;border:0.5px solid var(--border2);border-radius:8px;padding:10px 12px;font-size:13px;outline:none;transition:border-color 0.15s;}
+.login-input:focus{border-color:var(--blue);}
+.login-btn{width:100%;background:var(--blue);color:white;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;}
+.login-btn:hover{background:var(--blue-dk);}
+.login-error{background:var(--red-lt);color:var(--red);border-radius:7px;padding:8px 12px;font-size:12px;margin-top:10px;display:none;}
+.login-loading{text-align:center;color:var(--text2);font-size:13px;margin-top:10px;display:none;}
+
+/* APP */
+#app-screen{display:none;}
+.shell{display:flex;min-height:100vh;}
+.sidebar{width:230px;background:var(--bg);border-right:0.5px solid var(--border);display:flex;flex-direction:column;padding:1.25rem 0;position:fixed;top:0;left:0;height:100vh;z-index:10;overflow-y:auto;}
+.main{margin-left:230px;padding:1.5rem;flex:1;min-width:0;}
+.logo-wrap{padding:0 1.25rem 1rem;border-bottom:0.5px solid var(--border);margin-bottom:0.75rem;}
+.logo-icon{width:36px;height:36px;background:var(--blue);border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:7px;}
+.logo-icon svg{width:20px;height:20px;}
+.logo-name{font-size:13px;font-weight:700;color:var(--text);}
+.logo-sub{font-size:10px;color:var(--text3);}
+.user-pill{margin:0 1rem 0.5rem;background:var(--blue-lt);border-radius:8px;padding:8px 10px;}
+.user-name{font-size:12px;font-weight:700;color:var(--blue-dk);}
+.user-role{font-size:10px;color:var(--blue);margin-top:1px;}
+.nav-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;padding:0 1.25rem;margin:0.75rem 0 0.3rem;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:7px 1.25rem;font-size:12.5px;color:var(--text2);cursor:pointer;border-left:2px solid transparent;transition:all 0.1s;}
+.nav-item:hover{background:var(--bg2);color:var(--text);}
+.nav-item.active{background:var(--blue-lt);color:var(--blue);border-left-color:var(--blue);font-weight:600;}
+.nav-item.hidden-nav{display:none;}
+.sidebar-footer{margin-top:auto;padding:0.75rem 1.25rem 0;border-top:0.5px solid var(--border);}
+.logout-btn{width:100%;background:none;border:0.5px solid var(--border2);border-radius:7px;padding:7px;font-size:12px;cursor:pointer;color:var(--text2);margin-bottom:6px;}
+.logout-btn:hover{background:var(--red-lt);color:var(--red);border-color:var(--red);}
+
+/* LOADING */
+.loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;z-index:999;font-size:14px;color:var(--text2);}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite;margin-right:12px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:12px;}
+.page-title{font-size:18px;font-weight:700;color:var(--text);}
+.page-sub{font-size:12px;color:var(--text2);margin-top:2px;}
+.btn-primary{background:var(--blue);color:white;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+.btn-primary:hover{background:var(--blue-dk);}
+.btn-sm{padding:5px 12px;font-size:12px;border-radius:7px;}
+.btn-outline{background:none;border:0.5px solid var(--border2);border-radius:7px;padding:6px 13px;font-size:12px;cursor:pointer;color:var(--text2);}
+.btn-outline:hover{background:var(--bg2);}
+
+/* STATS */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem;}
+.stat-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);padding:1rem 1.25rem;}
+.stat-lbl{font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px;}
+.stat-val{font-size:26px;font-weight:700;}
+
+/* CARDS */
+.card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:1.25rem;margin-bottom:1.25rem;}
+.card-title{font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.4px;}
+
+/* BADGES */
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;}
+.b-enquiry{background:var(--blue-lt);color:var(--blue-dk);}
+.b-apqp{background:var(--amber-lt);color:#633806;}
+.b-tooling{background:var(--purple-lt);color:#3C3489;}
+.b-ppap{background:var(--teal-lt);color:#085041;}
+.b-approved{background:var(--green-lt);color:#27500A;}
+.b-hold{background:var(--red-lt);color:#791F1F;}
+.b-pass{background:var(--green-lt);color:#27500A;}
+.b-fail{background:var(--red-lt);color:#791F1F;}
+.b-conditional{background:var(--amber-lt);color:#633806;}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{text-align:left;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;padding:8px 12px;border-bottom:0.5px solid var(--border);}
+.tbl td{padding:11px 12px;border-bottom:0.5px solid var(--border);vertical-align:middle;font-size:13px;}
+.tbl tbody tr:last-child td{border-bottom:none;}
+.tbl tbody tr.clickable{cursor:pointer;transition:background 0.1s;}
+.tbl tbody tr.clickable:hover td{background:var(--bg2);}
+.tbl tbody tr.sel td{background:var(--blue-lt);}
+
+/* GATE BAR */
+.gate-bar{display:flex;align-items:center;gap:2px;min-width:190px;}
+.g-seg{flex:1;}
+.g-lbl{font-size:9px;color:var(--text3);margin-bottom:2px;text-align:center;}
+.g-bar{height:6px;border-radius:3px;}
+.g-bar.done{background:var(--green);}
+.g-bar.active{background:var(--blue);}
+.g-bar.pending{background:var(--border2);}
+
+/* DRAWER */
+.drawer{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:1.5rem;margin-bottom:1.25rem;}
+.drawer-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:0.5px solid var(--border);}
+.drawer-title{font-size:15px;font-weight:700;}
+.drawer-sub{font-size:12px;color:var(--text2);margin-top:3px;}
+
+/* INFO TILES */
+.info-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem;}
+.info-tile{background:var(--bg2);border-radius:8px;padding:10px 12px;}
+.info-key{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px;font-weight:600;}
+.info-val{font-size:13px;font-weight:600;color:var(--text);}
+
+/* TABS */
+.tab-row{display:flex;gap:2px;background:var(--bg2);border-radius:10px;padding:4px;width:fit-content;margin-bottom:1.25rem;flex-wrap:wrap;}
+.tab{padding:6px 14px;font-size:12px;color:var(--text2);cursor:pointer;border-radius:7px;font-weight:500;transition:all 0.1s;}
+.tab.active{background:var(--blue);color:white;font-weight:700;}
+.tab:hover:not(.active){background:var(--bg3);}
+
+/* CHECKLIST */
+.cl-block{background:var(--bg2);border-radius:var(--r);padding:1rem;}
+.cl-block-title{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:10px;}
+.cl-item{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:0.5px solid var(--border);}
+.cl-item:last-child{border-bottom:none;}
+.cl-check{width:17px;height:17px;border-radius:4px;border:1.5px solid var(--border2);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all 0.1s;}
+.cl-check.checked{background:var(--green);border-color:var(--green);}
+.cl-check.checked::after{content:'';width:9px;height:5px;border-left:2px solid white;border-bottom:2px solid white;transform:rotate(-45deg) translateY(-1px);display:block;}
+.cl-check.disabled{opacity:0.4;cursor:not-allowed;}
+.cl-prog{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.cl-prog-bar{flex:1;height:4px;background:var(--border2);border-radius:2px;}
+.cl-prog-fill{height:4px;border-radius:2px;background:var(--green);transition:width 0.3s;}
+.cl-prog-lbl{font-size:11px;color:var(--text3);}
+
+/* APPROVAL */
+.approval-box{border:1.5px solid var(--border);border-radius:var(--r);padding:1rem 1.25rem;margin-bottom:10px;}
+.approval-box.approved{border-color:var(--green);background:var(--green-lt);}
+.approval-box.rejected{border-color:var(--red);background:var(--red-lt);}
+
+/* ACTIONS */
+.act-tbl{width:100%;border-collapse:collapse;}
+.act-tbl th{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;padding:6px 10px;border-bottom:0.5px solid var(--border);text-align:left;}
+.act-tbl td{padding:9px 10px;border-bottom:0.5px solid var(--border);font-size:12px;vertical-align:middle;}
+.act-tbl tr:last-child td{border-bottom:none;}
+.pdot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+.pdot.high{background:var(--red);}
+.pdot.med{background:var(--amber);}
+.pdot.low{background:var(--green);}
+.btn-done{background:none;border:0.5px solid var(--border2);border-radius:5px;padding:3px 9px;font-size:11px;cursor:pointer;color:var(--green);}
+.btn-done:hover{background:var(--green-lt);}
+
+/* TRIAL */
+.trial-block{background:var(--bg2);border-radius:var(--r);padding:1rem;margin-bottom:10px;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:200;}
+.modal{background:var(--bg);border-radius:var(--rl);padding:1.5rem;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.2);}
+.modal-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:1.25rem;}
+.f-row{margin-bottom:12px;}
+.f-lbl{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:4px;}
+.f-row input,.f-row select,.f-row textarea{width:100%;border:0.5px solid var(--border2);border-radius:8px;padding:9px 11px;font-size:13px;background:var(--bg);color:var(--text);font-family:inherit;outline:none;transition:border-color 0.15s;}
+.f-row input:focus,.f-row select:focus,.f-row textarea:focus{border-color:var(--blue);}
+.f-row textarea{resize:vertical;min-height:70px;}
+.f-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.f-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem;padding-top:1rem;border-top:0.5px solid var(--border);}
+.btn-cancel{background:none;border:0.5px solid var(--border2);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;color:var(--text);}
+.btn-save{background:var(--blue);color:white;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;}
+
+.empty{text-align:center;padding:2rem;color:var(--text3);font-size:13px;}
+.chip{display:inline-block;background:var(--bg2);border:0.5px solid var(--border);border-radius:5px;padding:2px 9px;font-size:11px;margin-right:4px;}
+.dev-note{background:var(--amber-lt);border-radius:8px;padding:10px 14px;font-size:12px;color:#633806;margin-bottom:1rem;}
+.sync-indicator{position:fixed;bottom:16px;right:16px;background:var(--green);color:white;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;z-index:100;display:none;}
+.sync-indicator.saving{background:var(--amber);}
+@media print{.sidebar,.btn-primary,.btn-outline,.no-print{display:none!important;}.main{margin-left:0!important;padding:0!important;}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div style="margin:0 auto 1rem;text-align:center;">
+      <img src="data:image/png;base64,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" alt="Kumar Industries" style="width:160px;"/>
+    </div>
+    <div class="login-title" style="text-transform:uppercase;letter-spacing:1px;">KUMAR INDUSTRIES</div>
+    <div class="login-sub">NPD Management System · Sign in to continue</div>
+    <div class="login-field">
+      <label class="login-label">Email Address</label>
+      <input class="login-input" id="login-email" type="email" placeholder="your@kumarindus.com"/>
+    </div>
+    <div class="login-field">
+      <label class="login-label">Password</label>
+      <input class="login-input" id="login-pass" type="password" placeholder="Enter your password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-loading" id="login-loading">Signing in...</div>
+    <div style="text-align:center;margin-top:1rem;font-size:11px;color:var(--text3);">IATF 16949 · ISO 9001 · Confidential</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="logo-wrap">
+        <img src="data:image/png;base64,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" alt="Kumar Industries" style="width:100%;max-width:170px;display:block;margin:0 auto 8px;"/>
+        <div class="logo-name" style="text-transform:uppercase;letter-spacing:0.8px;font-size:12px;">KUMAR INDUSTRIES</div>
+        <div class="logo-sub">NPD System v3.0 · Live</div>
+      </div>
+      <div class="user-pill">
+        <div class="user-name" id="sidebar-name">—</div>
+        <div class="user-role" id="sidebar-role">—</div>
+      </div>
+      <div class="nav-label">Main</div>
+      <div class="nav-item active" onclick="setPage('dashboard',this)">Dashboard</div>
+      <div class="nav-item" onclick="setPage('projects',this)">All Projects</div>
+      <div class="nav-item" id="nav-actions" onclick="setPage('actions',this)">Open Actions</div>
+      <div class="nav-item" onclick="setPage('gantt',this)">Timeline</div>
+      <div class="nav-label">Reports</div>
+      <div class="nav-item" id="nav-reports" onclick="setPage('reports',this)">All Reports</div>
+      <div class="nav-label">Customers</div>
+      <div class="nav-item" onclick="setPage('customers',this)">Customer Database</div>
+      <div class="nav-item" onclick="setCustFilter('Ashok Leyland',this)">Ashok Leyland</div>
+      <div class="nav-item" onclick="setCustFilter('ZF',this)">ZF</div>
+      <div class="nav-item" onclick="setCustFilter('Salcomp',this)">Salcomp</div>
+      <div class="nav-item" onclick="setCustFilter('TVS',this)">TVS</div>
+      <div class="sidebar-footer">
+        <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+        <div style="font-size:10px;color:var(--text3);">IATF 16949 & ISO 9001</div>
+      </div>
+    </aside>
+    <main class="main">
+      <div id="pg-dashboard"></div>
+      <div id="pg-projects" style="display:none"></div>
+      <div id="pg-actions" style="display:none"></div>
+      <div id="pg-gantt" style="display:none"></div>
+      <div id="pg-reports" style="display:none"></div>
+      <div id="pg-customers" style="display:none"></div>
+    </main>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+<div class="sync-indicator" id="sync-ind">Saving...</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// FIREBASE CONFIG
+// ═══════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyBc9XkOZIeWgS_ublfrvcFpdPzUCC6ZTCw",
+  authDomain: "npd-kumar-industries.firebaseapp.com",
+  projectId: "npd-kumar-industries",
+  storageBucket: "npd-kumar-industries.firebasestorage.app",
+  messagingSenderId: "671220296705",
+  appId: "1:671220296705:web:9a5932a8395ed11754e400"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// ═══════════════════════════════════════════════
+// ROLE DEFINITIONS
+// ═══════════════════════════════════════════════
+const USER_ROLES = {
+  'npd@kumarindus.com':       {role:'NPD Lead',      canEdit:true,  canApprove:false, canAddProject:true,  reportsAccess:true},
+  'npd2@kumarindus.com':      {role:'Designer',      canEdit:true,  canApprove:false, canAddProject:false, reportsAccess:false},
+  'npd4@kumarindus.com':      {role:'Designer',      canEdit:true,  canApprove:false, canAddProject:false, reportsAccess:false},
+  'quality@kumarindus.com':   {role:'Quality Head',  canEdit:true,  canApprove:true,  canAddProject:false, reportsAccess:true},
+  'quality2@kumarindus.com':  {role:'Quality Lead - Plant 1', canEdit:true, canApprove:false, canAddProject:false, reportsAccess:false},
+  'kihqc@kumarindus.com':     {role:'Quality Lead - Plant 2', canEdit:true, canApprove:false, canAddProject:false, reportsAccess:false},
+  'aishwarya@kumarindus.com': {role:'NPD Head',      canEdit:true,  canApprove:true,  canAddProject:true,  reportsAccess:true},
+  'vigneshwar@kumarindus.com':{role:'CEO',           canEdit:false, canApprove:false, canAddProject:false, reportsAccess:true},
+  'kumar@kumarindus.com':     {role:'MD',            canEdit:false, canApprove:false, canAddProject:false, reportsAccess:true},
+  'javith.basha@kumarindus.com':   {role:'Plant 1 Head', canEdit:false, canApprove:false, canAddProject:false, reportsAccess:true},
+  'gnanasekaran.g@kumarindus.com': {role:'Plant 2 Head', canEdit:false, canApprove:false, canAddProject:false, reportsAccess:true},
+};
+
+// Gate approver roles
+const GATE_APPROVER_ROLES = ['NPD Head','Quality Head','NPD Head','Quality Head','NPD Head'];
+const GATE_APPROVER_EMAILS = {
+  0:['aishwarya@kumarindus.com'],
+  1:['quality@kumarindus.com'],
+  2:['aishwarya@kumarindus.com'],
+  3:['quality@kumarindus.com'],
+  4:['aishwarya@kumarindus.com']
+};
+
+const GATE_NAMES = ['Enquiry & Feasibility','APQP & Planning','Tooling & Development','PPAP & Trials','Customer Approval'];
+const GATE_SHORT = ['Enquiry','APQP','Tooling','PPAP','Approval'];
+const CUSTOMERS = ['Ashok Leyland','ZF','Salcomp','TVS','Other'];
+const OWNERS = ['NPD Lead','Designer','Quality Head','Quality Lead','Plant Head','Management'];
+const PPAP_LEVELS = ['Level 1','Level 2','Level 3','Level 4','Level 5'];
+const COMM_TYPES = ['Email','Phone Call','Meeting','Site Visit','Video Call'];
+const STATUS_COLOR = {enquiry:'#185FA5',apqp:'#BA7517',tooling:'#534AB7',ppap:'#0F6E56',approved:'#3B6D11',hold:'#A32D2D'};
+
+const GATE_CHECKLISTS = {
+  0:['Customer RFQ received & reviewed','Customer drawing received','Balloon drawing preparation','Drawing review completed (GD&T, tolerances)','Feasibility report prepared','Process Capability study (Cp/Cpk plan)','Cost estimation completed','RM availability report with vendor name','Capacity study & confirmation'],
+  1:['APQP plan / timeline created','DFMEA (Design FMEA) initiated','PFMEA (Process FMEA) initiated','Process flow diagram prepared','Control plan drafted','MSA plan ready','Gauge / fixture requirement list','APQP tracker updated'],
+  2:['Tool design approved','Trial schedule finalized','Raw material approval (incoming inspection)','Tooling milestone updated (Design→Machining→Tryout→Approved)','Tool tryout dimensional report','Tryout report prepared'],
+  3:['Dimensional report (balloon drawing)','Balloon drawing (PPAP final)','Material certificate','PFMEA final','Control plan approved','PSW (Part Submission Warrant)','Appearance Approval Report (AAR)','Customer PPAP submission acknowledgement'],
+  4:['SOP / Work instruction approved','Packaging standard & label approval','Customer-specific requirements (CSR) checklist complete','First Article Inspection (FAI) report approved','Mass production readiness sign-off']
+};
+
+function safeKey(k){
+  return k.replace(/\//g,'|').replace(/[()]/g,'').replace(/→/g,'>').replace(/  +/g,' ').trim();
+}
+function makeEmptyChecklist(){
+  const c={};
+  for(let g=0;g<5;g++) GATE_CHECKLISTS[g].forEach(i=>c[safeKey(g+'-'+i)]=false);
+  return c;
+}
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let currentUser = null;
+let currentUserInfo = null;
+let projects = [];
+let currentPage = 'dashboard';
+let selectedId = null;
+let custFilter = null;
+let projectsListener = null;
+
+// ═══════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════
+function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  const loadEl = document.getElementById('login-loading');
+  errEl.style.display='none';
+  loadEl.style.display='block';
+  auth.signInWithEmailAndPassword(email, pass)
+    .catch(err=>{
+      loadEl.style.display='none';
+      errEl.style.display='block';
+      errEl.textContent = err.code==='auth/wrong-password'||err.code==='auth/user-not-found'
+        ? 'Invalid email or password. Please try again.'
+        : 'Login failed: '+err.message;
+    });
+}
+
+function doLogout(){
+  if(projectsListener) projectsListener();
+  auth.signOut();
+}
+
+auth.onAuthStateChanged(user=>{
+  if(user){
+    currentUser = user;
+    const email = user.email.toLowerCase();
+    currentUserInfo = USER_ROLES[email] || {role:'Viewer',canEdit:false,canApprove:false,canAddProject:false,reportsAccess:false};
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app-screen').style.display='block';
+    document.getElementById('sidebar-name').textContent = email.split('@')[0].replace(/\./g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+    document.getElementById('sidebar-role').textContent = currentUserInfo.role;
+    // Hide nav items based on role
+    if(!currentUserInfo.reportsAccess) document.getElementById('nav-reports').style.display='none';
+    startListening();
+    renderPage('dashboard');
+  } else {
+    currentUser=null; currentUserInfo=null; projects=[];
+    document.getElementById('login-screen').style.display='flex';
+    document.getElementById('app-screen').style.display='none';
+    document.getElementById('login-loading').style.display='none';
+  }
+});
+
+// ═══════════════════════════════════════════════
+// FIRESTORE LIVE LISTENER
+// ═══════════════════════════════════════════════
+function startListening(){
+  startCustomersListening();
+  if(projectsListener) projectsListener();
+  projectsListener = db.collection('projects').orderBy('createdAt','desc')
+    .onSnapshot(snap=>{
+      projects = snap.docs.map(d=>({id:d.id,...d.data()}));
+      renderPage(currentPage);
+      // Re-open drawer if a project was selected (e.g. after checklist tick)
+      if(selectedId && currentPage==='projects'){
+        const dc=document.getElementById('drawer-container');
+        const p=projects.find(x=>x.id===selectedId);
+        if(dc&&p) dc.innerHTML=drawerHTML(p);
+      }
+    }, err=>console.error('Listener error:',err));
+}
+
+function showSync(saving=false){
+  const el=document.getElementById('sync-ind');
+  el.textContent=saving?'Saving...':'Saved ✓';
+  el.className='sync-indicator'+(saving?' saving':'');
+  el.style.display='block';
+  if(!saving) setTimeout(()=>el.style.display='none',2000);
+}
+
+// ═══════════════════════════════════════════════
+// FIRESTORE CRUD
+// ═══════════════════════════════════════════════
+async function saveProject(data){
+  showSync(true);
+  try{
+    if(data.id && !data.id.startsWith('new_')){
+      const {id,...rest}=data;
+      await db.collection('projects').doc(id).set(rest,{merge:true});
+    } else {
+      data.createdAt=firebase.firestore.FieldValue.serverTimestamp();
+      data.createdBy=currentUser.email;
+      delete data.id;
+      await db.collection('projects').add(data);
+    }
+    showSync(false);
+  }catch(e){console.error(e);showSync(false);}
+}
+
+async function updateProjectField(id,fields){
+  showSync(true);
+  try{
+    await db.collection('projects').doc(id).update(fields);
+    showSync(false);
+  }catch(e){console.error(e);showSync(false);}
+}
+
+// ═══════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════
+function setPage(name,el){
+  currentPage=name; custFilter=null; selectedId=null;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(el) el.classList.add('active');
+  ['dashboard','projects','actions','gantt','reports','customers'].forEach(p=>{
+    document.getElementById('pg-'+p).style.display=p===name?'block':'none';
+  });
+  renderPage(name);
+}
+function setCustFilter(c,el){
+  currentPage='projects'; custFilter=c; selectedId=null;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  ['dashboard','projects','actions','gantt','reports','customers'].forEach(p=>{
+    document.getElementById('pg-'+p).style.display=p==='projects'?'block':'none';
+  });
+  renderPage('projects');
+}
+function renderPage(n){
+  if(n==='dashboard') renderDashboard();
+  if(n==='projects') renderProjects();
+  if(n==='actions') renderActions();
+  if(n==='gantt') renderGantt();
+  if(n==='reports') renderReports();
+  if(n==='customers') renderCustomers();
+}
+
+// ═══════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════
+function badge(s){
+  const m={enquiry:'Enquiry',apqp:'APQP',tooling:'Tooling',ppap:'PPAP & Trials',approved:'Approved',hold:'On Hold'};
+  return `<span class="badge b-${s}">${m[s]||s}</span>`;
+}
+function daysLeft(d){return Math.ceil((new Date(d)-new Date())/86400000);}
+function fmt(n){return n>=0?'+₹'+n:'−₹'+Math.abs(n);}
+function gateProgress(p,g){
+  const items=GATE_CHECKLISTS[g]||[];
+  const cl=p.checklist||{};
+  const done=items.filter(i=>cl[safeKey(g+'-'+i)]).length;
+  return {done,total:items.length,pct:Math.round(done/items.length*100)||0};
+}
+function overallPct(p){
+  const all=Object.values(p.checklist||{});
+  if(!all.length) return 0;
+  return Math.round(all.filter(Boolean).length/all.length*100);
+}
+function openActs(p){return (p.actions||[]).filter(a=>!a.done);}
+function allOpenActs(){return projects.flatMap(p=>openActs(p).map(a=>({...a,partName:p.partName,pid:p.id})));}
+function gateApproval(p,g){return (p.gateApprovals||[]).find(a=>a.gate===g);}
+function isGateLocked(p,g){const a=gateApproval(p,g);return a&&a.status==='approved';}
+function canRequestApproval(p,g){
+  if(g!==p.currentGate) return false;
+  const prog=gateProgress(p,g);
+  const existing=gateApproval(p,g);
+  return prog.done===prog.total && (!existing||existing.status==='rejected');
+}
+function canApproveGate(g){
+  if(!currentUserInfo) return false;
+  return GATE_APPROVER_EMAILS[g]&&GATE_APPROVER_EMAILS[g].includes(currentUser.email);
+}
+function canEdit(){return currentUserInfo&&currentUserInfo.canEdit;}
+function gBarClass(p,i){
+  if(isGateLocked(p,i)) return 'done';
+  if(i===p.currentGate) return 'active';
+  return 'pending';
+}
+
+// ═══════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════
+function renderDashboard(){
+  const el=document.getElementById('pg-dashboard');
+  const total=projects.length;
+  const openA=allOpenActs().length;
+  const atPpap=projects.filter(p=>p.status==='ppap'||p.status==='approved').length;
+  const atRisk=projects.filter(p=>{const d=daysLeft(p.targetDate||'');return d<30&&p.status!=='approved';}).length;
+  el.innerHTML=`
+  <div class="topbar">
+    <div><div class="page-title">Dashboard</div><div class="page-sub">Live · Kumar Industries NPD Overview</div></div>
+    ${currentUserInfo&&currentUserInfo.canAddProject?`<button class="btn-primary" onclick="openNewProjectModal()">+ New Project</button>`:''}
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-lbl">Active Projects</div><div class="stat-val" style="color:var(--blue)">${total}</div></div>
+    <div class="stat-card"><div class="stat-lbl">Open Actions</div><div class="stat-val" style="color:var(--amber)">${openA}</div></div>
+    <div class="stat-card"><div class="stat-lbl">At PPAP Stage</div><div class="stat-val" style="color:var(--green)">${atPpap}</div></div>
+    <div class="stat-card"><div class="stat-lbl">At Risk (&lt;30d)</div><div class="stat-val" style="color:var(--red)">${atRisk}</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem;">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:1rem;">Project Progress</div>
+      ${projects.length?projects.map(p=>`<div style="margin-bottom:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+          <div style="font-size:13px;font-weight:600;">${p.partName}</div>${badge(p.status||'enquiry')}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="flex:1;height:5px;background:var(--bg3);border-radius:3px;">
+            <div style="width:${overallPct(p)}%;height:5px;border-radius:3px;background:${STATUS_COLOR[p.status]||'#185FA5'};"></div>
+          </div>
+          <span style="font-size:11px;color:var(--text3);">${overallPct(p)}%</span>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px;">Gate ${(p.currentGate||0)+1}: ${GATE_SHORT[p.currentGate||0]}</div>
+      </div>`).join(''):'<div class="empty">No projects yet.</div>'}
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:1rem;">Urgent Open Actions</div>
+      ${allOpenActs().filter(a=>a.priority==='high').slice(0,6).map(a=>`
+        <div style="display:flex;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);">
+          <span class="pdot high" style="margin-top:4px;flex-shrink:0;"></span>
+          <div style="font-size:12px;flex:1;">
+            <div style="font-weight:600;">${a.text}</div>
+            <div style="color:var(--text3);margin-top:1px;">${a.partName} · ${a.owner} · Due: ${a.due}</div>
+          </div>
+        </div>`).join('') || '<div class="empty">No urgent actions</div>'}
+    </div>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="padding:1rem 1.25rem;border-bottom:0.5px solid var(--border);"><div class="card-title">All Projects</div></div>
+    ${projectTableHTML(projects)}
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════
+// PROJECTS
+// ═══════════════════════════════════════════════
+function renderProjects(){
+  const el=document.getElementById('pg-projects');
+  const list=custFilter?projects.filter(p=>p.customer===custFilter):projects;
+  el.innerHTML=`
+  <div class="topbar">
+    <div><div class="page-title">${custFilter?custFilter+' Projects':'All Projects'}</div><div class="page-sub">${list.length} project(s) · Live data · Click row to expand</div></div>
+    ${currentUserInfo&&currentUserInfo.canAddProject?`<button class="btn-primary" onclick="openNewProjectModal()">+ New Project</button>`:''}
+  </div>
+  <div class="card" style="padding:0;overflow:hidden;">${projectTableHTML(list,true)}</div>
+  <div id="drawer-container"></div>`;
+}
+
+function projectTableHTML(list,clickable=false){
+  if(!list.length) return '<div class="empty">No projects found.</div>';
+  return `<table class="tbl">
+    <thead><tr><th>Part / Number</th><th>Customer</th><th>Status</th><th>Gate Progress</th><th>Overall</th><th>Target Date</th><th>Actions</th></tr></thead>
+    <tbody>
+    ${list.map(p=>{
+      const dl=daysLeft(p.targetDate||'');
+      const dlC=dl<0?'color:var(--red)':dl<30?'color:var(--amber)':'color:var(--text2)';
+      const gHtml=GATE_SHORT.map((g,i)=>`<div class="g-seg"><div class="g-lbl">${g}</div><div class="g-bar ${gBarClass(p,i)}"></div></div>${i<4?'<div style="color:var(--border2);font-size:9px;">›</div>':''}`).join('');
+      const pct=overallPct(p);
+      return `<tr class="${clickable?'clickable':''} ${selectedId===p.id?'sel':''}" onclick="${clickable?'toggleDrawer(\''+p.id+'\')':''}">
+        <td><div style="font-weight:600;">${p.partName}</div><div style="font-size:11px;color:var(--text3);">${p.partNo} · Rev ${p.drawingRev}</div></td>
+        <td>${p.customer}</td>
+        <td>${badge(p.status||'enquiry')}</td>
+        <td><div class="gate-bar">${gHtml}</div></td>
+        <td>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="width:60px;height:5px;background:var(--bg3);border-radius:3px;"><div style="width:${pct}%;height:5px;border-radius:3px;background:${STATUS_COLOR[p.status]||'#185FA5'};"></div></div>
+            <span style="font-size:11px;color:var(--text3);">${pct}%</span>
+          </div>
+        </td>
+        <td style="${dlC};font-size:12px;">${p.targetDate||'—'}<br><span style="font-size:11px;">${dl>0?dl+'d left':dl===0?'Today':'Overdue'}</span></td>
+        <td style="font-size:11px;color:var(--text3);">${openActs(p).length} open</td>
+      </tr>`;
+    }).join('')}
+    </tbody></table>`;
+}
+
+function toggleDrawer(id){
+  selectedId=(selectedId===id)?null:id;
+  renderProjects();
+  if(selectedId){
+    const dc=document.getElementById('drawer-container');
+    const p=projects.find(x=>x.id===id);
+    if(p){dc.innerHTML=drawerHTML(p);dc.scrollIntoView({behavior:'smooth',block:'nearest'});}
+  }
+}
+
+// ═══════════════════════════════════════════════
+// DRAWER
+// ═══════════════════════════════════════════════
+function drawerHTML(p){
+  const margin=(p.quotedPrice||0)-(p.targetPrice||0);
+  const dl=daysLeft(p.targetDate||'');
+  const canE=canEdit();
+  return `<div class="drawer">
+    <div class="drawer-hdr">
+      <div>
+        <div class="drawer-title">${p.partName} &nbsp; ${badge(p.status||'enquiry')}</div>
+        <div class="drawer-sub">${p.partNo} · Rev ${p.drawingRev} · ${p.customer} · Gate ${(p.currentGate||0)+1}: ${GATE_NAMES[p.currentGate||0]}</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${canE?`<button class="btn-outline" onclick="openAddActionModal('${p.id}')">+ Action</button>
+        <button class="btn-outline" onclick="openCommModal('${p.id}')">+ Comm</button>
+        <button class="btn-outline" onclick="openDocModal('${p.id}')">+ Doc</button>
+        <button class="btn-outline" onclick="openRevModal('${p.id}')">+ Rev</button>`:''}
+        ${currentUser&&currentUser.email==='aishwarya@kumarindus.com'?`<button class="btn-outline" style="color:var(--red);border-color:var(--red);" onclick="deleteProject('${p.id}','${p.partName}')">Delete</button>`:''}
+        <button class="btn-outline" style="color:var(--red);border-color:var(--red);" onclick="toggleDrawer('${p.id}')">Close</button>
+      </div>
+    </div>
+    <div class="info-grid">
+      <div class="info-tile"><div class="info-key">Target Price</div><div class="info-val">₹${p.targetPrice||0}</div></div>
+      <div class="info-tile"><div class="info-key">Quoted Price</div><div class="info-val">₹${p.quotedPrice||0}</div></div>
+      <div class="info-tile"><div class="info-key">Price Margin</div><div class="info-val" style="color:${margin>=0?'var(--green)':'var(--red)'};">${fmt(margin)}</div></div>
+      <div class="info-tile"><div class="info-key">Tooling Cost</div><div class="info-val">₹${((p.toolingCost||0)/1000).toFixed(0)}K</div></div>
+      <div class="info-tile"><div class="info-key">PPAP Level</div><div class="info-val">${p.ppapLevel||'—'}</div></div>
+      <div class="info-tile"><div class="info-key">PPAP Status</div><div class="info-val">${p.ppapStatus||'Not started'}</div></div>
+      <div class="info-tile"><div class="info-key">Target Date</div><div class="info-val">${p.targetDate||'—'}</div></div>
+      <div class="info-tile"><div class="info-key">Days Remaining</div><div class="info-val" style="color:${dl<0?'var(--red)':dl<30?'var(--amber)':'var(--green)'};">${dl>0?dl+'d':dl===0?'Today':'Overdue'}</div></div>
+    </div>
+    ${p.deviations&&p.deviations!=='None'?`<div class="dev-note"><strong>Deviations:</strong> ${p.deviations}</div>`:''}
+    <div class="tab-row" id="dtabs-${p.id}">
+      <div class="tab active" onclick="showDTab('${p.id}','gates',this)">Gate Checklists</div>
+      <div class="tab" onclick="showDTab('${p.id}','actions',this)">Actions (${openActs(p).length})</div>
+      <div class="tab" onclick="showDTab('${p.id}','trials',this)">Trials (${(p.trials||[]).length})</div>
+      <div class="tab" onclick="showDTab('${p.id}','comm',this)">Comm Log</div>
+      <div class="tab" onclick="showDTab('${p.id}','revs',this)">Drawing Revs</div>
+      <div class="tab" onclick="showDTab('${p.id}','docs',this)">Documents</div>
+      <div class="tab" onclick="showDTab('${p.id}','history',this)">Approval History</div>
+    </div>
+    <div id="dtab-${p.id}-gates">${gateTabHTML(p)}</div>
+    <div id="dtab-${p.id}-actions" style="display:none">${actionsTabHTML(p)}</div>
+    <div id="dtab-${p.id}-trials" style="display:none">${trialsTabHTML(p)}</div>
+    <div id="dtab-${p.id}-comm" style="display:none">${commTabHTML(p)}</div>
+    <div id="dtab-${p.id}-revs" style="display:none">${revsTabHTML(p)}</div>
+    <div id="dtab-${p.id}-docs" style="display:none">${docsTabHTML(p)}</div>
+    <div id="dtab-${p.id}-history" style="display:none">${historyTabHTML(p)}</div>
+  </div>`;
+}
+
+function showDTab(pid,tab,el){
+  document.getElementById('dtabs-'+pid).querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['gates','actions','trials','comm','revs','docs','history'].forEach(t=>{
+    const e=document.getElementById('dtab-'+pid+'-'+t);
+    if(e) e.style.display=t===tab?'block':'none';
+  });
+}
+
+function gateTabHTML(p){
+  const canE=canEdit();
+  let html='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1rem;">';
+  for(let g=0;g<5;g++){
+    const prog=gateProgress(p,g);
+    const isActive=g===(p.currentGate||0);
+    const isLocked=isGateLocked(p,g);
+    const isFuture=g>(p.currentGate||0);
+    const appr=gateApproval(p,g);
+    const borderColor=isLocked?'var(--green)':isActive?'var(--blue)':'var(--border)';
+    const items=GATE_CHECKLISTS[g]||[];
+    html+=`<div style="background:var(--bg2);border:1.5px solid ${borderColor};border-radius:var(--r);padding:1rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="font-size:12px;font-weight:700;color:${isLocked?'var(--green)':isActive?'var(--blue)':'var(--text3)'};">Gate ${g+1}: ${GATE_SHORT[g]}</div>
+        ${isLocked?'<span style="font-size:10px;background:var(--green-lt);color:var(--green);padding:2px 8px;border-radius:10px;font-weight:700;">✓ APPROVED</span>':isActive?'<span style="font-size:10px;background:var(--blue-lt);color:var(--blue);padding:2px 8px;border-radius:10px;font-weight:700;">ACTIVE</span>':'<span style="font-size:10px;color:var(--text3);">'+( g<(p.currentGate||0)?'Completed':'Locked')+'</span>'}
+      </div>
+      <div class="cl-prog" style="margin-bottom:10px;">
+        <div class="cl-prog-bar"><div class="cl-prog-fill" style="width:${prog.pct}%;background:${isLocked?'var(--green)':isActive?'var(--blue)':'var(--text3)'}"></div></div>
+        <div class="cl-prog-lbl">${prog.done}/${prog.total}</div>
+      </div>
+      ${items.map(item=>{
+        const key=safeKey(g+'-'+item);
+        const checked=(p.checklist||{})[key];
+        const disabled=isFuture||isLocked||!canE||!isActive;
+        return `<div class="cl-item">
+          <div class="cl-check${checked?' checked':''}${disabled?' disabled':''}" onclick="${disabled?'':'toggleCheck(\''+p.id+'\',\''+key.replace(/'/g,"\\'")+'\')'}" title="${disabled?(isLocked?'Approved — locked':isFuture?'Future gate':'View only'):'Click to toggle'}"></div>
+          <div style="font-size:12px;color:var(--text);${checked?'text-decoration:line-through;color:var(--text3)':''}">${item}</div>
+        </div>`;
+      }).join('')}
+      ${isActive&&!isLocked?`<div style="margin-top:10px;">
+        ${appr&&appr.status==='rejected'?
+          `<div style="font-size:11px;color:var(--red);background:var(--red-lt);border-radius:6px;padding:7px;margin-bottom:6px;">Rejected: ${appr.remark||'No remark'}</div>`:''
+        }
+        ${prog.done===prog.total?
+          canApproveGate(g)?
+            `<button class="btn-primary btn-sm" style="width:100%;background:var(--green);" onclick="openApprovalModal('${p.id}',${g})">✓ Approve Gate ${g+1} →</button>`:
+            `<div style="font-size:11px;color:var(--amber);background:var(--amber-lt);border-radius:6px;padding:7px;text-align:center;">
+               All ${prog.total} items complete ✓<br><strong>Awaiting ${GATE_APPROVER_ROLES[g]} approval</strong>
+             </div>`
+          :
+          `<div style="font-size:11px;color:var(--text3);background:var(--bg3);border-radius:6px;padding:7px;">
+             ${prog.total-prog.done} item(s) remaining before approval can be requested from ${GATE_APPROVER_ROLES[g]}.
+           </div>`
+        }
+      </div>`:''}
+      ${isLocked&&appr?`<div style="margin-top:8px;font-size:11px;color:var(--green);border-top:0.5px solid var(--border);padding-top:6px;">✓ ${appr.approverName} · ${appr.date}</div>`:''}
+    </div>`;
+    if(g===1) html+='</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1rem;">';
+  }
+  html+='</div>';
+  return html;
+}
+
+function actionsTabHTML(p){
+  const open=openActs(p);
+  const canE=canEdit();
+  return `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <div style="font-size:12px;font-weight:700;color:var(--text2);">${open.length} open action(s)</div>
+    ${canE?`<button class="btn-primary btn-sm" onclick="openAddActionModal('${p.id}')">+ Add Action</button>`:''}
+  </div>
+  ${open.length?`<table class="act-tbl">
+    <thead><tr><th>Pri</th><th>Action</th><th>Owner</th><th>Due</th>${canE?'<th></th>':''}</tr></thead>
+    <tbody>${open.map((a,i)=>`<tr>
+      <td><span class="pdot ${a.priority}"></span></td>
+      <td style="font-weight:500;">${a.text}</td>
+      <td><span class="chip">${a.owner}</span></td>
+      <td style="color:${daysLeft(a.due)<0?'var(--red)':daysLeft(a.due)<7?'var(--amber)':'var(--text)'};">${a.due}</td>
+      ${canE?`<td><button class="btn-done" onclick="markActionDone('${p.id}',${i})">Done</button></td>`:''}
+    </tr>`).join('')}</tbody>
+  </table>`:'<div class="empty">No open actions.</div>'}`;
+}
+
+function trialsTabHTML(p){
+  const canE=canEdit();
+  return `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <div style="font-size:12px;font-weight:700;color:var(--text2);">Trial / Tryout Log</div>
+    ${canE?`<button class="btn-primary btn-sm" onclick="openTrialModal('${p.id}')">+ Add Trial</button>`:''}
+  </div>
+  ${(p.trials||[]).length?(p.trials||[]).map(t=>`<div class="trial-block">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div style="font-size:13px;font-weight:700;">Trial ${t.no} &nbsp; <span class="badge b-${(t.result||'').toLowerCase()}">${t.result}</span></div>
+      <div style="font-size:12px;color:var(--text2);">${t.date}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;">
+      <div><span style="color:var(--text3);font-weight:600;">Dim Check:</span> <span style="color:${t.dimOk?'var(--green)':'var(--red)'};">${t.dimOk?'OK':'NOT OK'}</span></div>
+      <div><span style="color:var(--text3);font-weight:600;">Rejection Reason:</span> ${t.rejReason||'—'}</div>
+      <div style="grid-column:span 2;"><span style="color:var(--text3);font-weight:600;">Corrective Action:</span> ${t.corrAction||'—'}</div>
+    </div>
+  </div>`).join(''):'<div class="empty">No trials recorded yet.</div>'}`;
+}
+
+function commTabHTML(p){
+  const canE=canEdit();
+  return `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <div style="font-size:12px;font-weight:700;color:var(--text2);">Communication Log</div>
+    ${canE?`<button class="btn-primary btn-sm" onclick="openCommModal('${p.id}')">+ Add</button>`:''}
+  </div>
+  ${(p.commLog||[]).length?(p.commLog||[]).slice().reverse().map(c=>`<div style="padding:10px 0;border-bottom:0.5px solid var(--border);font-size:12px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+      <span class="badge b-enquiry" style="font-size:10px;">${c.type}</span>
+      <span style="color:var(--text3);">${c.date}</span>
+      <span style="font-weight:600;">${c.by}</span>
+    </div>
+    <div>${c.summary}</div>
+    <div style="color:var(--text3);margin-top:2px;">Outcome: ${c.outcome}</div>
+  </div>`).join(''):'<div class="empty">No communication log yet.</div>'}`;
+}
+
+function revsTabHTML(p){
+  const canE=canEdit();
+  return `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <div style="font-size:12px;font-weight:700;color:var(--text2);">Drawing Revision History</div>
+    ${canE?`<button class="btn-primary btn-sm" onclick="openRevModal('${p.id}')">+ Add Rev</button>`:''}
+  </div>
+  ${(p.drawingRevisions||[]).length?`<table class="act-tbl">
+    <thead><tr><th>Rev</th><th>Date</th><th>Changes</th><th>Approved By</th></tr></thead>
+    <tbody>${(p.drawingRevisions||[]).slice().reverse().map(r=>`<tr>
+      <td><strong style="font-size:14px;">${r.rev}</strong></td>
+      <td>${r.date}</td><td>${r.changes}</td><td>${r.approvedBy}</td>
+    </tr>`).join('')}</tbody>
+  </table>`:'<div class="empty">No revisions recorded.</div>'}`;
+}
+
+function docsTabHTML(p){
+  const canE=canEdit();
+  return `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <div style="font-size:12px;font-weight:700;color:var(--text2);">Document Links</div>
+    ${canE?`<button class="btn-primary btn-sm" onclick="openDocModal('${p.id}')">+ Add Doc</button>`:''}
+  </div>
+  ${(p.documents||[]).length?`<table class="act-tbl">
+    <thead><tr><th>Document</th><th>Gate</th><th>Type</th><th>Link</th></tr></thead>
+    <tbody>${(p.documents||[]).map(d=>`<tr>
+      <td style="font-weight:500;">${d.name}</td>
+      <td>Gate ${d.gate+1}: ${GATE_SHORT[d.gate]}</td>
+      <td><span class="chip">${d.type}</span></td>
+      <td><a href="${d.url}" target="_blank" style="color:var(--blue);">Open →</a></td>
+    </tr>`).join('')}</tbody>
+  </table>`:'<div class="empty">No documents linked. Add Google Drive / SharePoint links.</div>'}`;
+}
+
+function historyTabHTML(p){
+  if(!(p.gateApprovals||[]).length) return '<div class="empty">No approvals recorded yet.</div>';
+  return (p.gateApprovals||[]).map(a=>`<div class="approval-box ${a.status}" style="margin-bottom:10px;">
+    <div style="font-size:12px;font-weight:700;margin-bottom:8px;">Gate ${a.gate+1}: ${GATE_NAMES[a.gate]}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
+      <div><span style="color:var(--text2);">Approver:</span> <strong>${a.approverRole}</strong> — ${a.approverName}</div>
+      <div><span style="color:var(--text2);">Date:</span> ${a.date}</div>
+      <div><span style="color:var(--text2);">Decision:</span> <strong style="color:${a.status==='approved'?'var(--green)':'var(--red)'};">${(a.status||'').toUpperCase()}</strong></div>
+      ${a.customerApproval?`<div><span style="color:var(--text2);">Customer:</span> ${a.customerApproval.name} on ${a.customerApproval.date}</div>`:'<div></div>'}
+    </div>
+    ${a.remark?`<div style="margin-top:8px;font-size:12px;"><span style="color:var(--text2);">Remark:</span> ${a.remark}</div>`:''}
+  </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+// ACTIONS PAGE
+// ═══════════════════════════════════════════════
+function renderActions(){
+  const el=document.getElementById('pg-actions');
+  const all=allOpenActs().sort((a,b)=>{const pr={high:0,med:1,low:2};return (pr[a.priority]||1)-(pr[b.priority]||1)||new Date(a.due)-new Date(b.due);});
+  el.innerHTML=`
+  <div class="topbar"><div><div class="page-title">Open Actions</div><div class="page-sub">${all.length} open · sorted by priority</div></div></div>
+  <div class="card" style="padding:0;overflow:hidden;">
+  ${all.length?`<table class="tbl">
+    <thead><tr><th>Priority</th><th>Action</th><th>Project</th><th>Owner</th><th>Due Date</th></tr></thead>
+    <tbody>${all.map(a=>`<tr>
+      <td><span class="pdot ${a.priority}"></span> <span style="font-size:11px;text-transform:capitalize;color:var(--text2);">${a.priority}</span></td>
+      <td style="font-weight:500;">${a.text}</td>
+      <td><span class="chip">${a.partName}</span></td>
+      <td>${a.owner}</td>
+      <td style="color:${daysLeft(a.due)<0?'var(--red)':daysLeft(a.due)<7?'var(--amber)':'var(--text)'};">${a.due}</td>
+    </tr>`).join('')}</tbody>
+  </table>`:'<div class="empty">No open actions!</div>'}
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════
+// GANTT
+// ═══════════════════════════════════════════════
+function renderGantt(){
+  const el=document.getElementById('pg-gantt');
+  if(!projects.length){el.innerHTML='<div class="topbar"><div><div class="page-title">Timeline</div></div></div><div class="card"><div class="empty">No projects yet.</div></div>';return;}
+  const now=new Date();
+  const allD=projects.flatMap(p=>[new Date(p.startDate||new Date()),new Date(p.targetDate||new Date())]);
+  const minD=new Date(Math.min(...allD)),maxD=new Date(Math.max(...allD));
+  const span=(maxD-minD)||1;
+  el.innerHTML=`
+  <div class="topbar"><div><div class="page-title">Project Timeline</div><div class="page-sub">Red line = today</div></div></div>
+  <div class="card"><div style="overflow-x:auto;"><table style="width:100%;min-width:700px;border-collapse:collapse;">
+    <thead><tr>
+      <th style="text-align:left;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;padding:8px 12px;border-bottom:0.5px solid var(--border);width:180px;">Part</th>
+      <th style="text-align:left;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;padding:8px 12px;border-bottom:0.5px solid var(--border);">Timeline</th>
+      <th style="text-align:left;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;padding:8px 12px;border-bottom:0.5px solid var(--border);width:100px;">Target</th>
+    </tr></thead>
+    <tbody>${projects.map(p=>{
+      const s=new Date(p.startDate||minD),e=new Date(p.targetDate||maxD);
+      const lp=((s-minD)/span*100).toFixed(1);
+      const wp=((e-s)/span*100).toFixed(1);
+      const np=Math.min(100,Math.max(0,(now-minD)/span*100)).toFixed(1);
+      const col=STATUS_COLOR[p.status]||'#185FA5';
+      return `<tr>
+        <td style="padding:10px 12px;font-weight:600;font-size:12px;border-bottom:0.5px solid var(--border);">${p.partName}<div style="font-size:11px;color:var(--text3);">${p.customer}</div></td>
+        <td style="padding:10px 12px;border-bottom:0.5px solid var(--border);">
+          <div style="position:relative;height:18px;background:var(--bg2);border-radius:4px;">
+            <div style="position:absolute;left:${lp}%;width:${wp}%;height:18px;background:${col};border-radius:4px;opacity:0.8;"></div>
+            <div style="position:absolute;left:${np}%;top:-2px;width:2px;height:22px;background:var(--red);"></div>
+          </div>
+        </td>
+        <td style="padding:10px 12px;font-size:12px;border-bottom:0.5px solid var(--border);">${p.targetDate||'—'}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div></div>`;
+}
+
+// ═══════════════════════════════════════════════
+// REPORTS
+// ═══════════════════════════════════════════════
+function renderReports(){
+  const el=document.getElementById('pg-reports');
+  if(!currentUserInfo||!currentUserInfo.reportsAccess){
+    el.innerHTML='<div class="card"><div class="empty">You do not have access to reports.</div></div>';return;
+  }
+  el.innerHTML=`
+  <div class="topbar">
+    <div><div class="page-title">Reports</div><div class="page-sub">Generate, print or export</div></div>
+    <button class="btn-primary no-print" onclick="window.print()">🖨 Print / PDF</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;" class="no-print">
+    ${[['NPD Summary','All projects overview','rpt-summary'],['Gate-wise Status','Projects by gate','rpt-gates'],['Open Actions','Owner-wise tasks','rpt-actions'],['PPAP Status','PPAP submission status','rpt-ppap'],['Customer-wise','Projects by customer','rpt-customer'],['Monthly MIS','NPD review report','rpt-mis']].map(([t,s,id])=>`
+    <div class="card" style="cursor:pointer;margin:0;" onclick="showReport('${id}')">
+      <div style="font-size:13px;font-weight:700;margin-bottom:4px;">${t}</div>
+      <div style="font-size:12px;color:var(--text2);">${s}</div>
+    </div>`).join('')}
+  </div>
+  <div id="report-output"></div>`;
+}
+
+function showReport(id){
+  const out=document.getElementById('report-output');
+  const today=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  let html=`<div class="card"><div style="border-bottom:2px solid var(--blue);margin-bottom:1.25rem;padding-bottom:10px;display:flex;justify-content:space-between;">
+    <div><div style="font-size:16px;font-weight:700;">Kumar Industries — NPD Report</div><div style="font-size:12px;color:var(--text2);">Generated: ${today} · IATF 16949 / ISO 9001</div></div>
+    <button class="btn-outline no-print" onclick="window.print()">Print</button>
+  </div>`;
+  if(id==='rpt-summary'){
+    html+=`<div style="font-size:14px;font-weight:700;margin-bottom:1rem;">NPD Summary Report</div>
+    <table class="tbl"><thead><tr><th>Part Name</th><th>Customer</th><th>Status</th><th>Gate</th><th>Overall %</th><th>Target Date</th><th>Days Left</th></tr></thead>
+    <tbody>${projects.map(p=>`<tr>
+      <td style="font-weight:600;">${p.partName}<div style="font-size:11px;color:var(--text3);">${p.partNo}</div></td>
+      <td>${p.customer}</td><td>${badge(p.status||'enquiry')}</td>
+      <td>Gate ${(p.currentGate||0)+1}: ${GATE_SHORT[p.currentGate||0]}</td>
+      <td>${overallPct(p)}%</td><td>${p.targetDate||'—'}</td>
+      <td style="color:${daysLeft(p.targetDate||'')<0?'var(--red)':daysLeft(p.targetDate||'')<30?'var(--amber)':'var(--text)'};">${daysLeft(p.targetDate||'')>0?daysLeft(p.targetDate||'')+'d':'Overdue'}</td>
+    </tr>`).join('')}</tbody></table>`;
+  } else if(id==='rpt-gates'){
+    html+=`<div style="font-size:14px;font-weight:700;margin-bottom:1rem;">Gate-wise Status Report</div>
+    ${GATE_NAMES.map((gn,gi)=>{
+      const atG=projects.filter(p=>(p.currentGate||0)===gi);
+      return `<div style="margin-bottom:1.25rem;"><div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:8px;">Gate ${gi+1}: ${gn} (${atG.length})</div>
+      ${atG.length?`<table class="tbl"><thead><tr><th>Part</th><th>Customer</th><th>Checklist</th><th>Approval</th></tr></thead>
+      <tbody>${atG.map(p=>{const prog=gateProgress(p,gi);const a=gateApproval(p,gi);return `<tr><td style="font-weight:600;">${p.partName}</td><td>${p.customer}</td><td>${prog.done}/${prog.total} (${prog.pct}%)</td><td>${a?`<span style="color:${a.status==='approved'?'var(--green)':'var(--amber)'};">${a.status} — ${a.approverName}</span>`:'Pending'}</td></tr>`;}).join('')}</tbody></table>`:'<div style="font-size:12px;color:var(--text3);padding:6px 0;">No projects at this gate.</div>'}</div>`;
+    }).join('')}`;
+  } else if(id==='rpt-actions'){
+    const all=allOpenActs().sort((a,b)=>{const pr={high:0,med:1,low:2};return (pr[a.priority]||1)-(pr[b.priority]||1);});
+    html+=`<div style="font-size:14px;font-weight:700;margin-bottom:1rem;">Open Actions — Owner-wise</div>
+    ${OWNERS.map(owner=>{
+      const owns=all.filter(a=>a.owner===owner);
+      return owns.length?`<div style="margin-bottom:1.25rem;"><div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:8px;">${owner} (${owns.length})</div>
+      <table class="tbl"><thead><tr><th>Action</th><th>Project</th><th>Priority</th><th>Due</th></tr></thead>
+      <tbody>${owns.map(a=>`<tr><td>${a.text}</td><td>${a.partName}</td><td><span class="pdot ${a.priority}"></span> ${a.priority}</td><td>${a.due}</td></tr>`).join('')}</tbody></table></div>`:'';
+    }).join('')}`;
+  } else if(id==='rpt-ppap'){
+    html+=`<div style="font-size:14px;font-weight:700;margin-bottom:1rem;">PPAP Status Report</div>
+    <table class="tbl"><thead><tr><th>Part</th><th>Customer</th><th>PPAP Level</th><th>Status</th><th>Gate 4 Progress</th><th>PSW</th></tr></thead>
+    <tbody>${projects.map(p=>{const prog=gateProgress(p,3);return `<tr>
+      <td style="font-weight:600;">${p.partName}<div style="font-size:11px;color:var(--text3);">${p.partNo}</div></td>
+      <td>${p.customer}</td><td>${p.ppapLevel||'—'}</td><td>${p.ppapStatus||'—'}</td>
+      <td>${prog.done}/${prog.total} (${prog.pct}%)</td>
+      <td style="color:${(p.checklist||{})['3-PSW (Part Submission Warrant)']?'var(--green)':'var(--red)'};">${(p.checklist||{})['3-PSW (Part Submission Warrant)']?'Yes':'No'}</td>
+    </tr>`;}).join('')}</tbody></table>`;
+  } else if(id==='rpt-customer'){
+    html+=`<div style="font-size:14px;font-weight:700;margin-bottom:1rem;">Customer-wise Report</div>
+    ${CUSTOMERS.filter(c=>c!=='Other').map(cust=>{
+      const cp=projects.filter(p=>p.customer===cust);
+      return cp.length?`<div style="margin-bottom:1.25rem;"><div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:8px;">${cust} (${cp.length})</div>
+      <table class="tbl"><thead><tr><th>Part</th><th>Status</th><th>Overall %</th><th>Target Date</th></tr></thead>
+      <tbody>${cp.map(p=>`<tr><td style="font-weight:600;">${p.partName} (${p.partNo})</td><td>${badge(p.status||'enquiry')}</td><td>${overallPct(p)}%</td><td>${p.targetDate||'—'}</td></tr>`).join('')}</tbody></table></div>`:'';
+    }).join('')}`;
+  } else if(id==='rpt-mis'){
+    const mo=new Date().toLocaleString('default',{month:'long',year:'numeric'});
+    html+=`<div style="font-size:14px;font-weight:700;margin-bottom:1rem;">Monthly MIS Report — ${mo}</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem;">
+      <div class="info-tile"><div class="info-key">Total Projects</div><div style="font-size:20px;font-weight:700;">${projects.length}</div></div>
+      <div class="info-tile"><div class="info-key">Open Actions</div><div style="font-size:20px;font-weight:700;">${allOpenActs().length}</div></div>
+      <div class="info-tile"><div class="info-key">At PPAP</div><div style="font-size:20px;font-weight:700;">${projects.filter(p=>p.status==='ppap').length}</div></div>
+      <div class="info-tile"><div class="info-key">Approved</div><div style="font-size:20px;font-weight:700;">${projects.filter(p=>p.status==='approved').length}</div></div>
+    </div>
+    <table class="tbl"><thead><tr><th>Part</th><th>Customer</th><th>Gate</th><th>Status</th><th>%</th><th>Open Actions</th><th>Target Date</th></tr></thead>
+    <tbody>${projects.map(p=>`<tr>
+      <td style="font-weight:600;">${p.partName}</td><td>${p.customer}</td>
+      <td>Gate ${(p.currentGate||0)+1}: ${GATE_SHORT[p.currentGate||0]}</td>
+      <td>${badge(p.status||'enquiry')}</td><td>${overallPct(p)}%</td>
+      <td style="color:${openActs(p).length>0?'var(--amber)':'var(--green)'};">${openActs(p).length}</td>
+      <td>${p.targetDate||'—'}</td>
+    </tr>`).join('')}</tbody></table>`;
+  }
+  html+='</div>';
+  out.innerHTML=html;
+  out.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ═══════════════════════════════════════════════
+// INTERACTIONS
+// ═══════════════════════════════════════════════
+async function toggleCheck(pid,key){
+  if(!canEdit()){alert('You do not have edit access.');return;}
+  const p=projects.find(x=>x.id===pid);
+  if(!p) return;
+  const g=parseInt(key.split('-')[0]);
+  if(isGateLocked(p,g)){alert('This gate is locked after approval.');return;}
+  if(g!==(p.currentGate||0)){alert('You can only update the active gate checklist.');return;}
+  const sk=safeKey(key);
+  const newVal=!((p.checklist||{})[sk]);
+  selectedId=pid;
+  await updateProjectField(pid,{['checklist.'+sk]:newVal});
+}
+
+async function markActionDone(pid,idx){
+  if(!canEdit()) return;
+  const p=projects.find(x=>x.id===pid);
+  if(!p) return;
+  const actions=[...(p.actions||[])];
+  const open=actions.filter(a=>!a.done);
+  if(open[idx]) open[idx].done=true;
+  selectedId=pid;
+  await updateProjectField(pid,{actions});
+}
+
+// ═══════════════════════════════════════════════
+// APPROVAL MODAL
+// ═══════════════════════════════════════════════
+function openApprovalModal(pid,gate){
+  const p=projects.find(x=>x.id===pid);
+  document.getElementById('modal-root').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-title">Gate ${gate+1} Approval — ${p.partName}</div>
+      <div style="background:var(--blue-lt);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--blue-dk);margin-bottom:1rem;">
+        <strong>Required Approver:</strong> ${GATE_APPROVER_ROLES[gate]} &nbsp;|&nbsp; <strong>Gate:</strong> ${GATE_NAMES[gate]}
+      </div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">Approver Role</label><input id="ap-role" value="${currentUserInfo.role}" readonly/></div>
+        <div class="f-row"><label class="f-lbl">Approver Name *</label><input id="ap-name" placeholder="Your full name"/></div>
+      </div>
+      <div class="f-row"><label class="f-lbl">Decision *</label>
+        <select id="ap-dec"><option value="approved">Approved — proceed to next gate</option><option value="rejected">Rejected — send back for rework</option></select>
+      </div>
+      <div class="f-row"><label class="f-lbl">Remark / Comment</label><textarea id="ap-rem" placeholder="Add your comments..."></textarea></div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">Customer Approval Name</label><input id="ap-cn" placeholder="Customer contact (optional)"/></div>
+        <div class="f-row"><label class="f-lbl">Customer Approval Date</label><input id="ap-cd" type="date"/></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-save" onclick="saveApproval('${pid}',${gate})">Submit</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('ap-cd').value=new Date().toISOString().split('T')[0];
+}
+
+async function saveApproval(pid,gate){
+  const name=document.getElementById('ap-name').value.trim();
+  const role=document.getElementById('ap-role').value;
+  const decision=document.getElementById('ap-dec').value;
+  const remark=document.getElementById('ap-rem').value.trim();
+  const custName=document.getElementById('ap-cn').value.trim();
+  const custDate=document.getElementById('ap-cd').value;
+  if(!name){alert('Approver name is required.');return;}
+  const p=projects.find(x=>x.id===pid);
+  const today=new Date().toISOString().split('T')[0];
+  const approvals=[...(p.gateApprovals||[]).filter(a=>a.gate!==gate)];
+  approvals.push({gate,status:decision,approverRole:role,approverName:name,date:today,remark,customerApproval:custName?{name:custName,date:custDate}:null});
+  let updates={gateApprovals:approvals};
+  if(decision==='approved'){
+    const gs=[...(p.gateStatus||[0,0,0,0,0])];
+    gs[gate]=2;
+    const statusMap={0:'enquiry',1:'apqp',2:'tooling',3:'ppap',4:'approved'};
+    if(gate<4){gs[gate+1]=1;updates.currentGate=gate+1;updates.status=statusMap[gate+1];}
+    else{updates.status='approved';}
+    updates.gateStatus=gs;
+  }
+  await updateProjectField(pid,updates);
+  closeModal();
+  selectedId=pid;
+}
+
+// ═══════════════════════════════════════════════
+// ADD ACTION MODAL
+// ═══════════════════════════════════════════════
+function openAddActionModal(pid){
+  const p=projects.find(x=>x.id===pid);
+  document.getElementById('modal-root').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:420px;">
+      <div class="modal-title">Add Action — ${p.partName}</div>
+      <div class="f-row"><label class="f-lbl">Action Description *</label><input id="a-text" placeholder="Describe the action required"/></div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">Owner *</label><select id="a-own">${OWNERS.map(o=>`<option>${o}</option>`).join('')}</select></div>
+        <div class="f-row"><label class="f-lbl">Priority *</label><select id="a-pri"><option value="high">High</option><option value="med" selected>Medium</option><option value="low">Low</option></select></div>
+      </div>
+      <div class="f-row"><label class="f-lbl">Due Date *</label><input id="a-due" type="date"/></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-save" onclick="saveAction('${pid}')">Save</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('a-due').value=new Date().toISOString().split('T')[0];
+}
+
+async function saveAction(pid){
+  const text=document.getElementById('a-text').value.trim();
+  const owner=document.getElementById('a-own').value;
+  const priority=document.getElementById('a-pri').value;
+  const due=document.getElementById('a-due').value;
+  if(!text||!due){alert('Description and due date are required.');return;}
+  const p=projects.find(x=>x.id===pid);
+  const actions=[...(p.actions||[]),{text,owner,priority,due,done:false,addedBy:currentUser.email,addedAt:new Date().toISOString()}];
+  await updateProjectField(pid,{actions});
+  closeModal(); selectedId=pid;
+}
+
+// ═══════════════════════════════════════════════
+// TRIAL MODAL
+// ═══════════════════════════════════════════════
+function openTrialModal(pid){
+  const p=projects.find(x=>x.id===pid);
+  const nextNo=(p.trials||[]).length+1;
+  document.getElementById('modal-root').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-title">Add Trial ${nextNo} — ${p.partName}</div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">Date *</label><input id="t-date" type="date"/></div>
+        <div class="f-row"><label class="f-lbl">Result *</label><select id="t-res"><option>Pass</option><option>Fail</option><option>Conditional</option></select></div>
+      </div>
+      <div class="f-row"><label class="f-lbl">Dimension Check</label><select id="t-dim"><option value="true">OK</option><option value="false">NOT OK</option></select></div>
+      <div class="f-row"><label class="f-lbl">Rejection Reason</label><input id="t-rej" placeholder="If Fail/Conditional"/></div>
+      <div class="f-row"><label class="f-lbl">Corrective Action</label><textarea id="t-cor" placeholder="Action taken to correct the issue"></textarea></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-save" onclick="saveTrial('${pid}',${nextNo})">Save Trial</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('t-date').value=new Date().toISOString().split('T')[0];
+}
+
+async function saveTrial(pid,no){
+  const date=document.getElementById('t-date').value;
+  const result=document.getElementById('t-res').value;
+  const dimOk=document.getElementById('t-dim').value==='true';
+  const rejReason=document.getElementById('t-rej').value.trim()||'—';
+  const corrAction=document.getElementById('t-cor').value.trim()||'—';
+  if(!date){alert('Date required.');return;}
+  const p=projects.find(x=>x.id===pid);
+  const trials=[...(p.trials||[]),{no,date,result,dimOk,rejReason,corrAction}];
+  await updateProjectField(pid,{trials});
+  closeModal(); selectedId=pid;
+}
+
+// ═══════════════════════════════════════════════
+// COMM MODAL
+// ═══════════════════════════════════════════════
+function openCommModal(pid){
+  const p=projects.find(x=>x.id===pid);
+  document.getElementById('modal-root').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:440px;">
+      <div class="modal-title">Add Communication — ${p.partName}</div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">Date *</label><input id="c-date" type="date"/></div>
+        <div class="f-row"><label class="f-lbl">Type *</label><select id="c-type">${COMM_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div>
+      </div>
+      <div class="f-row"><label class="f-lbl">Summary *</label><textarea id="c-sum" placeholder="What was discussed?"></textarea></div>
+      <div class="f-row"><label class="f-lbl">Outcome</label><input id="c-out" placeholder="Decision or next step"/></div>
+      <div class="f-row"><label class="f-lbl">Recorded By</label><input id="c-by" placeholder="Your name"/></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-save" onclick="saveComm('${pid}')">Save</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('c-date').value=new Date().toISOString().split('T')[0];
+}
+
+async function saveComm(pid){
+  const date=document.getElementById('c-date').value;
+  const type=document.getElementById('c-type').value;
+  const summary=document.getElementById('c-sum').value.trim();
+  const outcome=document.getElementById('c-out').value.trim()||'—';
+  const by=document.getElementById('c-by').value.trim()||currentUser.email.split('@')[0];
+  if(!summary){alert('Summary required.');return;}
+  const p=projects.find(x=>x.id===pid);
+  const commLog=[...(p.commLog||[]),{date,type,summary,outcome,by}];
+  await updateProjectField(pid,{commLog});
+  closeModal(); selectedId=pid;
+}
+
+// ═══════════════════════════════════════════════
+// DRAWING REV MODAL
+// ═══════════════════════════════════════════════
+function openRevModal(pid){
+  const p=projects.find(x=>x.id===pid);
+  document.getElementById('modal-root').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:420px;">
+      <div class="modal-title">Add Drawing Revision — ${p.partName}</div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">Revision *</label><input id="r-rev" placeholder="e.g. D"/></div>
+        <div class="f-row"><label class="f-lbl">Date *</label><input id="r-date" type="date"/></div>
+      </div>
+      <div class="f-row"><label class="f-lbl">Changes Made *</label><textarea id="r-chg" placeholder="What changed in this revision?"></textarea></div>
+      <div class="f-row"><label class="f-lbl">Approved By</label><input id="r-by" placeholder="Approver name"/></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-save" onclick="saveRev('${pid}')">Save</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('r-date').value=new Date().toISOString().split('T')[0];
+}
+
+async function saveRev(pid){
+  const rev=document.getElementById('r-rev').value.trim().toUpperCase();
+  const date=document.getElementById('r-date').value;
+  const changes=document.getElementById('r-chg').value.trim();
+  const approvedBy=document.getElementById('r-by').value.trim()||'NPD';
+  if(!rev||!changes){alert('Revision letter and changes are required.');return;}
+  const p=projects.find(x=>x.id===pid);
+  const drawingRevisions=[...(p.drawingRevisions||[]),{rev,date,changes,approvedBy}];
+  await updateProjectField(pid,{drawingRevisions,drawingRev:rev});
+  closeModal(); selectedId=pid;
+}
+
+// ═══════════════════════════════════════════════
+// DOCUMENT MODAL
+// ═══════════════════════════════════════════════
+function openDocModal(pid){
+  const p=projects.find(x=>x.id===pid);
+  document.getElementById('modal-root').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:460px;">
+      <div class="modal-title">Add Document Link — ${p.partName}</div>
+      <div class="f-row"><label class="f-lbl">Document Name *</label><input id="d-name" placeholder="e.g. PFMEA Rev A"/></div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">Gate</label><select id="d-gate">${GATE_SHORT.map((g,i)=>`<option value="${i}">Gate ${i+1}: ${g}</option>`).join('')}</select></div>
+        <div class="f-row"><label class="f-lbl">Type</label><select id="d-type"><option>Drawing</option><option>PFMEA</option><option>DFMEA</option><option>Control Plan</option><option>PPAP</option><option>Report</option><option>Certificate</option><option>Other</option></select></div>
+      </div>
+      <div class="f-row"><label class="f-lbl">URL / Link *</label><input id="d-url" placeholder="https://drive.google.com/..."/></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-save" onclick="saveDoc('${pid}')">Save</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function saveDoc(pid){
+  const name=document.getElementById('d-name').value.trim();
+  const gate=parseInt(document.getElementById('d-gate').value);
+  const type=document.getElementById('d-type').value;
+  const url=document.getElementById('d-url').value.trim();
+  if(!name||!url){alert('Name and URL required.');return;}
+  const p=projects.find(x=>x.id===pid);
+  const documents=[...(p.documents||[]),{name,gate,type,url,addedBy:currentUser.email,date:new Date().toISOString().split('T')[0]}];
+  await updateProjectField(pid,{documents});
+  closeModal(); selectedId=pid;
+}
+
+// ═══════════════════════════════════════════════
+// NEW PROJECT MODAL
+// ═══════════════════════════════════════════════
+function openNewProjectModal(){
+  if(!currentUserInfo||!currentUserInfo.canAddProject){alert('You do not have permission to add projects.');return;}
+  document.getElementById('modal-root').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-title">Add New NPD Project</div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">Part Name *</label><input id="np-name" placeholder="e.g. Front Bracket Assy"/></div>
+        <div class="f-row"><label class="f-lbl">Part Number *</label><input id="np-no" placeholder="e.g. KI-AL-0001"/></div>
+      </div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">Drawing Rev</label><input id="np-rev" placeholder="A"/></div>
+        <div class="f-row"><label class="f-lbl">Customer *</label><select id="np-cust"><option value="">Select</option>${CUSTOMERS.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      </div>
+      <div class="f-3col">
+        <div class="f-row"><label class="f-lbl">Target Price (₹)</label><input id="np-tp" type="number" placeholder="0"/></div>
+        <div class="f-row"><label class="f-lbl">Quoted Price (₹)</label><input id="np-qp" type="number" placeholder="0"/></div>
+        <div class="f-row"><label class="f-lbl">Tooling Cost (₹)</label><input id="np-tc" type="number" placeholder="0"/></div>
+      </div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">Start Date</label><input id="np-sd" type="date"/></div>
+        <div class="f-row"><label class="f-lbl">Target Date</label><input id="np-td" type="date"/></div>
+      </div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">PPAP Level</label><select id="np-ppap">${PPAP_LEVELS.map(l=>`<option>${l}</option>`).join('')}</select></div>
+        <div class="f-row"><label class="f-lbl">Deviations / Notes</label><input id="np-dev" placeholder="None"/></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-save" onclick="saveNewProject()">Create Project</button>
+      </div>
+    </div>
+  </div>`;
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('np-sd').value=today;
+}
+
+async function saveNewProject(){
+  const v=id=>document.getElementById(id).value;
+  if(!v('np-name')||!v('np-cust')){alert('Part Name and Customer are required.');return;}
+  const today=new Date().toISOString().split('T')[0];
+  const rev=v('np-rev')||'A';
+  const data={
+    partName:v('np-name'),partNo:v('np-no')||'KI-000',drawingRev:rev,customer:v('np-cust'),
+    status:'enquiry',targetPrice:parseFloat(v('np-tp'))||0,quotedPrice:parseFloat(v('np-qp'))||0,
+    toolingCost:parseFloat(v('np-tc'))||0,toolingActual:0,partCostTarget:parseFloat(v('np-tp'))||0,
+    partCostActual:0,startDate:v('np-sd')||today,targetDate:v('np-td')||today,
+    ppapLevel:v('np-ppap')||'Level 3',ppapStatus:'Not started',deviations:v('np-dev')||'None',
+    currentGate:0,gateStatus:[1,0,0,0,0],checklist:makeEmptyChecklist(),
+    gateApprovals:[],actions:[],trials:[],commLog:[],
+    drawingRevisions:[{rev,date:today,changes:'Initial release',approvedBy:currentUser.email.split('@')[0]}],
+    documents:[]
+  };
+  await saveProject(data);
+  closeModal();
+}
+
+function closeModal(){document.getElementById('modal-root').innerHTML='';}
+
+// ═══════════════════════════════════════════════
+// DELETE PROJECT (NPD Head only)
+// ═══════════════════════════════════════════════
+async function deleteProject(pid, partName){
+  if(!currentUser||currentUser.email!=='aishwarya@kumarindus.com'){
+    alert('Only NPD Head can delete projects.');return;
+  }
+  if(!confirm('Are you sure you want to permanently delete "'+partName+'"?\nThis cannot be undone.')){return;}
+  if(!confirm('Final confirmation: Delete "'+partName+'" permanently?')){return;}
+  showSync(true);
+  try{
+    await db.collection('projects').doc(pid).delete();
+    selectedId=null;
+    showSync(false);
+  }catch(e){console.error(e);showSync(false);alert('Delete failed: '+e.message);}
+}
+
+// ═══════════════════════════════════════════════
+// CUSTOMER DATABASE
+// ═══════════════════════════════════════════════
+let customers_db = [];
+let customersListener = null;
+
+function startCustomersListening(){
+  if(customersListener) customersListener();
+  customersListener = db.collection('customers_db').orderBy('createdAt','desc')
+    .onSnapshot(snap=>{
+      customers_db = snap.docs.map(d=>({id:d.id,...d.data()}));
+      if(currentPage==='customers') renderCustomers();
+    }, err=>console.error('Customers listener error:',err));
+}
+
+function renderCustomers(){
+  const el=document.getElementById('pg-customers');
+  const canManage=['npd@kumarindus.com','aishwarya@kumarindus.com'].includes(currentUser.email);
+  const active=customers_db.filter(c=>c.status==='Active').length;
+  const oem=customers_db.filter(c=>c.category==='OEM').length;
+  const tier1=customers_db.filter(c=>c.category==='Tier 1').length;
+
+  el.innerHTML=`
+  <div class="topbar">
+    <div><div class="page-title">Customer Database</div>
+    <div class="page-sub">${customers_db.length} customers · Master data</div></div>
+    ${canManage?`<button class="btn-primary" onclick="openNewCustomerModal()">+ Add Customer</button>`:''}
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-lbl">Total Customers</div><div class="stat-val" style="color:var(--blue)">${customers_db.length}</div></div>
+    <div class="stat-card"><div class="stat-lbl">Active</div><div class="stat-val" style="color:var(--green)">${active}</div></div>
+    <div class="stat-card"><div class="stat-lbl">OEM</div><div class="stat-val" style="color:var(--purple)">${oem}</div></div>
+    <div class="stat-card"><div class="stat-lbl">Tier 1</div><div class="stat-val" style="color:var(--amber)">${tier1}</div></div>
+  </div>
+  ${customers_db.length?customers_db.map(c=>`
+  <div class="card" style="margin-bottom:1rem;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:0.5px solid var(--border);">
+      <div>
+        <div style="font-size:15px;font-weight:700;">${c.name}
+          <span style="font-size:11px;background:var(--blue-lt);color:var(--blue-dk);padding:2px 8px;border-radius:10px;margin-left:6px;">${c.shortCode||'—'}</span>
+          <span style="font-size:11px;background:${c.category==='OEM'?'var(--purple-lt)':c.category==='Tier 1'?'var(--amber-lt)':'var(--bg2)'};color:${c.category==='OEM'?'var(--purple)':c.category==='Tier 1'?'var(--amber)':'var(--text2)'};padding:2px 8px;border-radius:10px;margin-left:4px;">${c.category||'—'}</span>
+          <span style="font-size:11px;background:${c.status==='Active'?'var(--green-lt)':'var(--red-lt)'};color:${c.status==='Active'?'var(--green)':'var(--red)'};padding:2px 8px;border-radius:10px;margin-left:4px;">${c.status||'Active'}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-top:3px;">${c.city||''}${c.city&&c.address?', ':''} ${c.address||''}</div>
+      </div>
+      ${canManage?`<div style="display:flex;gap:8px;">
+        <button class="btn-outline" onclick="openEditCustomerModal('${c.id}')">Edit</button>
+        <button class="btn-outline" style="color:var(--red);border-color:var(--red);" onclick="deleteCustomer('${c.id}','${c.name}')">Delete</button>
+      </div>`:''}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1rem;">
+      <div class="info-tile"><div class="info-key">Primary Contact</div><div class="info-val">${c.contactName||'—'}</div><div style="font-size:11px;color:var(--text3);">${c.contactDesig||''}</div></div>
+      <div class="info-tile"><div class="info-key">Phone</div><div class="info-val" style="font-size:12px;">${c.contactPhone||'—'}</div></div>
+      <div class="info-tile"><div class="info-key">Email</div><div class="info-val" style="font-size:12px;word-break:break-all;">${c.contactEmail||'—'}</div></div>
+      <div class="info-tile"><div class="info-key">Payment Terms</div><div class="info-val">${c.paymentTerms||'—'}</div><div style="font-size:11px;color:var(--text3);">${c.creditDays?c.creditDays+' days':''}</div></div>
+    </div>
+    ${(c.plants||[]).length?`
+    <div style="margin-bottom:0.75rem;">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px;">Plant Locations</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${(c.plants||[]).map(pl=>`<span style="background:var(--bg2);border:0.5px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;">${pl}</span>`).join('')}
+      </div>
+    </div>`:''}
+    ${c.csrNotes?`<div style="background:var(--amber-lt);border-radius:8px;padding:10px 14px;font-size:12px;color:#633806;">
+      <strong>CSR / Quality Requirements:</strong> ${c.csrNotes}
+    </div>`:''}
+  </div>`).join(''):`<div class="card"><div class="empty">No customers added yet. Click "+ Add Customer" to begin.</div></div>`}`;
+}
+
+function openNewCustomerModal(){
+  document.getElementById('modal-root').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-title">Add New Customer</div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">Customer Name *</label><input id="cu-name" placeholder="e.g. Ashok Leyland"/></div>
+        <div class="f-row"><label class="f-lbl">Short Code *</label><input id="cu-code" placeholder="e.g. AL" style="text-transform:uppercase;"/></div>
+      </div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">Category</label>
+          <select id="cu-cat"><option>OEM</option><option>Tier 1</option><option>Tier 2</option><option>Other</option></select></div>
+        <div class="f-row"><label class="f-lbl">Status</label>
+          <select id="cu-status"><option>Active</option><option>Inactive</option></select></div>
+      </div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">City</label><input id="cu-city" placeholder="e.g. Chennai"/></div>
+        <div class="f-row"><label class="f-lbl">Address</label><input id="cu-addr" placeholder="Full address"/></div>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;margin:10px 0 8px;">Primary Contact</div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">Contact Name</label><input id="cu-cname" placeholder="Name"/></div>
+        <div class="f-row"><label class="f-lbl">Designation</label><input id="cu-cdesig" placeholder="e.g. Purchase Manager"/></div>
+      </div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">Phone</label><input id="cu-cphone" placeholder="+91 XXXXX XXXXX"/></div>
+        <div class="f-row"><label class="f-lbl">Email</label><input id="cu-cemail" type="email" placeholder="contact@customer.com"/></div>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;margin:10px 0 8px;">Plant Locations</div>
+      <div class="f-row"><label class="f-lbl">Plants (comma separated)</label>
+        <input id="cu-plants" placeholder="e.g. Chennai Plant, Hosur Plant, Pune Plant"/></div>
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;margin:10px 0 8px;">Commercial & Quality</div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">Payment Terms</label>
+          <select id="cu-pay"><option>Advance</option><option>30 days</option><option>45 days</option><option>60 days</option><option>90 days</option><option>LC</option><option>Other</option></select></div>
+        <div class="f-row"><label class="f-lbl">Credit Days</label><input id="cu-credit" type="number" placeholder="30"/></div>
+      </div>
+      <div class="f-row"><label class="f-lbl">CSR / Quality Requirements</label>
+        <textarea id="cu-csr" placeholder="Customer-specific quality requirements, standards, audit frequency..."></textarea></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-save" onclick="saveCustomer()">Save Customer</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function saveCustomer(editId){
+  const v=id=>document.getElementById(id).value.trim();
+  if(!v('cu-name')||!v('cu-code')){alert('Customer name and short code are required.');return;}
+  const plantsRaw=v('cu-plants');
+  const plants=plantsRaw?plantsRaw.split(',').map(p=>p.trim()).filter(Boolean):[];
+  const data={
+    name:v('cu-name'), shortCode:v('cu-code').toUpperCase(),
+    category:v('cu-cat'), status:v('cu-status'),
+    city:v('cu-city'), address:v('cu-addr'),
+    contactName:v('cu-cname'), contactDesig:v('cu-cdesig'),
+    contactPhone:v('cu-cphone'), contactEmail:v('cu-cemail'),
+    plants, paymentTerms:v('cu-pay'),
+    creditDays:parseInt(v('cu-credit'))||0,
+    csrNotes:v('cu-csr'),
+  };
+  showSync(true);
+  try{
+    if(editId){
+      await db.collection('customers_db').doc(editId).update(data);
+    } else {
+      data.createdAt=firebase.firestore.FieldValue.serverTimestamp();
+      data.createdBy=currentUser.email;
+      await db.collection('customers_db').add(data);
+    }
+    showSync(false);
+    closeModal();
+  }catch(e){console.error(e);showSync(false);alert('Save failed: '+e.message);}
+}
+
+function openEditCustomerModal(cid){
+  const c=customers_db.find(x=>x.id===cid);
+  if(!c) return;
+  document.getElementById('modal-root').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-title">Edit Customer — ${c.name}</div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">Customer Name *</label><input id="cu-name" value="${c.name||''}"/></div>
+        <div class="f-row"><label class="f-lbl">Short Code *</label><input id="cu-code" value="${c.shortCode||''}" style="text-transform:uppercase;"/></div>
+      </div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">Category</label>
+          <select id="cu-cat">${['OEM','Tier 1','Tier 2','Other'].map(o=>`<option${o===c.category?' selected':''}>${o}</option>`).join('')}</select></div>
+        <div class="f-row"><label class="f-lbl">Status</label>
+          <select id="cu-status">${['Active','Inactive'].map(o=>`<option${o===c.status?' selected':''}>${o}</option>`).join('')}</select></div>
+      </div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">City</label><input id="cu-city" value="${c.city||''}"/></div>
+        <div class="f-row"><label class="f-lbl">Address</label><input id="cu-addr" value="${c.address||''}"/></div>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;margin:10px 0 8px;">Primary Contact</div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">Contact Name</label><input id="cu-cname" value="${c.contactName||''}"/></div>
+        <div class="f-row"><label class="f-lbl">Designation</label><input id="cu-cdesig" value="${c.contactDesig||''}"/></div>
+      </div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">Phone</label><input id="cu-cphone" value="${c.contactPhone||''}"/></div>
+        <div class="f-row"><label class="f-lbl">Email</label><input id="cu-cemail" value="${c.contactEmail||''}"/></div>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;margin:10px 0 8px;">Plants & Commercial</div>
+      <div class="f-row"><label class="f-lbl">Plants (comma separated)</label>
+        <input id="cu-plants" value="${(c.plants||[]).join(', ')}"/></div>
+      <div class="f-2col">
+        <div class="f-row"><label class="f-lbl">Payment Terms</label>
+          <select id="cu-pay">${['Advance','30 days','45 days','60 days','90 days','LC','Other'].map(o=>`<option${o===c.paymentTerms?' selected':''}>${o}</option>`).join('')}</select></div>
+        <div class="f-row"><label class="f-lbl">Credit Days</label><input id="cu-credit" type="number" value="${c.creditDays||''}"/></div>
+      </div>
+      <div class="f-row"><label class="f-lbl">CSR / Quality Requirements</label>
+        <textarea id="cu-csr">${c.csrNotes||''}</textarea></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-save" onclick="saveCustomer('${cid}')">Update Customer</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function deleteCustomer(cid, name){
+  if(!['npd@kumarindus.com','aishwarya@kumarindus.com'].includes(currentUser.email)){
+    alert('You do not have permission to delete customers.');return;
+  }
+  if(!confirm('Delete customer "'+name+'"? This cannot be undone.')){return;}
+  showSync(true);
+  try{
+    await db.collection('customers_db').doc(cid).delete();
+    showSync(false);
+  }catch(e){console.error(e);showSync(false);}
+}
+
+</script>
+</body>
+</html>
