@@ -1,0 +1,1876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Kumar Industries — NPD Tracker</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#fff;--bg2:#f6f6f4;--bg3:#eeede9;
+  --text:#1a1a1a;--text2:#5c5c58;--text3:#9c9c96;
+  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.18);
+  --blue:#185FA5;--blue-lt:#E6F1FB;--blue-dk:#0C447C;
+  --green:#3B6D11;--green-lt:#EAF3DE;
+  --amber:#BA7517;--amber-lt:#FAEEDA;
+  --red:#A32D2D;--red-lt:#FCEBEB;
+  --purple:#534AB7;--purple-lt:#EEEDFE;
+  --teal:#0F6E56;--teal-lt:#E1F5EE;
+  --r:10px;--rl:14px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh;}
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0C447C 0%,#185FA5 50%,#1a7abf 100%);}
+.login-card{background:white;border-radius:16px;padding:2.5rem;width:380px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+.login-title{font-size:16px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:1px;}
+.login-sub{font-size:12px;color:var(--text2);text-align:center;margin-bottom:1.5rem;}
+.login-field{margin-bottom:14px;}
+.login-label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:5px;}
+.login-input{width:100%;border:0.5px solid var(--border2);border-radius:8px;padding:10px 12px;font-size:13px;outline:none;}
+.login-input:focus{border-color:var(--blue);}
+.login-btn{width:100%;background:var(--blue);color:white;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;}
+.login-btn:hover{background:var(--blue-dk);}
+.login-error{background:var(--red-lt);color:var(--red);border-radius:7px;padding:8px 12px;font-size:12px;margin-top:10px;display:none;}
+.login-loading{text-align:center;color:var(--text2);font-size:13px;margin-top:10px;display:none;}
+#app-screen{display:none;}
+.shell{display:flex;min-height:100vh;}
+.sidebar{width:230px;background:var(--bg);border-right:0.5px solid var(--border);display:flex;flex-direction:column;padding:1.25rem 0;position:fixed;top:0;left:0;height:100vh;z-index:10;overflow-y:auto;}
+.main{margin-left:230px;padding:1.5rem;flex:1;min-width:0;}
+.logo-wrap{padding:0 1.25rem 1rem;border-bottom:0.5px solid var(--border);margin-bottom:0.75rem;}
+.logo-name{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;}
+.logo-sub{font-size:10px;color:var(--text3);}
+.user-pill{margin:0 1rem 0.5rem;background:var(--blue-lt);border-radius:8px;padding:8px 10px;}
+.user-name{font-size:12px;font-weight:700;color:var(--blue-dk);}
+.user-role{font-size:10px;color:var(--blue);margin-top:1px;}
+.nav-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;padding:0 1.25rem;margin:0.75rem 0 0.3rem;}
+.nav-item{padding:7px 1.25rem;font-size:12.5px;color:var(--text2);cursor:pointer;border-left:2px solid transparent;transition:all 0.1s;}
+.nav-item:hover{background:var(--bg2);color:var(--text);}
+.nav-item.active{background:var(--blue-lt);color:var(--blue);border-left-color:var(--blue);font-weight:600;}
+.sidebar-footer{margin-top:auto;padding:0.75rem 1.25rem 0;border-top:0.5px solid var(--border);}
+.logout-btn{width:100%;background:none;border:0.5px solid var(--border2);border-radius:7px;padding:7px;font-size:12px;cursor:pointer;color:var(--text2);margin-bottom:6px;}
+.logout-btn:hover{background:var(--red-lt);color:var(--red);border-color:var(--red);}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:12px;}
+.page-title{font-size:18px;font-weight:700;}
+.page-sub{font-size:12px;color:var(--text2);margin-top:2px;}
+.btn-primary{background:var(--blue);color:white;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-primary:hover{background:var(--blue-dk);}
+.btn-teal{background:var(--teal);color:white;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-sm{padding:5px 12px;font-size:12px;border-radius:7px;}
+.btn-outline{background:none;border:0.5px solid var(--border2);border-radius:7px;padding:6px 13px;font-size:12px;cursor:pointer;color:var(--text2);}
+.btn-outline:hover{background:var(--bg2);}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem;}
+.stat-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);padding:1rem 1.25rem;}
+.stat-lbl{font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px;}
+.stat-val{font-size:26px;font-weight:700;}
+.card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:1.25rem;margin-bottom:1.25rem;}
+.card-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;}
+.b-enquiry{background:var(--blue-lt);color:var(--blue-dk);}
+.b-apqp{background:var(--amber-lt);color:#633806;}
+.b-tooling{background:var(--purple-lt);color:#3C3489;}
+.b-ppap{background:var(--teal-lt);color:#085041;}
+.b-approved{background:var(--green-lt);color:#27500A;}
+.b-hold{background:var(--red-lt);color:#791F1F;}
+.b-pass{background:var(--green-lt);color:#27500A;}
+.b-fail{background:var(--red-lt);color:#791F1F;}
+.b-conditional{background:var(--amber-lt);color:#633806;}
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{text-align:left;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;padding:8px 12px;border-bottom:0.5px solid var(--border);}
+.tbl td{padding:11px 12px;border-bottom:0.5px solid var(--border);vertical-align:middle;font-size:13px;}
+.tbl tbody tr:last-child td{border-bottom:none;}
+.tbl tbody tr.clickable{cursor:pointer;}
+.tbl tbody tr.clickable:hover td{background:var(--bg2);}
+.tbl tbody tr.sel td{background:var(--blue-lt);}
+.gate-bar{display:flex;align-items:center;gap:2px;min-width:190px;}
+.g-seg{flex:1;}
+.g-lbl{font-size:9px;color:var(--text3);margin-bottom:2px;text-align:center;}
+.g-bar{height:6px;border-radius:3px;}
+.g-bar.done{background:var(--green);}
+.g-bar.active{background:var(--blue);}
+.g-bar.pending{background:var(--border2);}
+.drawer{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:1.5rem;margin-bottom:1.25rem;}
+.drawer-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:0.5px solid var(--border);}
+.info-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem;}
+.info-tile{background:var(--bg2);border-radius:8px;padding:10px 12px;}
+.info-key{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px;font-weight:600;}
+.info-val{font-size:13px;font-weight:600;color:var(--text);}
+.tab-row{display:flex;gap:2px;background:var(--bg2);border-radius:10px;padding:4px;width:fit-content;margin-bottom:1.25rem;flex-wrap:wrap;}
+.tab{padding:6px 14px;font-size:12px;color:var(--text2);cursor:pointer;border-radius:7px;font-weight:500;}
+.tab.active{background:var(--blue);color:white;font-weight:700;}
+.tab:hover:not(.active){background:var(--bg3);}
+.cl-item{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:0.5px solid var(--border);}
+.cl-item:last-child{border-bottom:none;}
+.cl-check{width:17px;height:17px;border-radius:4px;border:1.5px solid var(--border2);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+.cl-check.checked{background:var(--green);border-color:var(--green);}
+.cl-check.checked::after{content:'';width:9px;height:5px;border-left:2px solid white;border-bottom:2px solid white;transform:rotate(-45deg) translateY(-1px);display:block;}
+.cl-check.disabled{opacity:0.4;cursor:not-allowed;}
+.cl-prog{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.cl-prog-bar{flex:1;height:4px;background:var(--border2);border-radius:2px;}
+.cl-prog-fill{height:4px;border-radius:2px;background:var(--green);}
+.cl-prog-lbl{font-size:11px;color:var(--text3);}
+.approval-box{border:1.5px solid var(--border);border-radius:var(--r);padding:1rem 1.25rem;margin-bottom:10px;}
+.approval-box.approved{border-color:var(--green);background:var(--green-lt);}
+.approval-box.rejected{border-color:var(--red);background:var(--red-lt);}
+.act-tbl{width:100%;border-collapse:collapse;}
+.act-tbl th{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;padding:6px 10px;border-bottom:0.5px solid var(--border);text-align:left;}
+.act-tbl td{padding:9px 10px;border-bottom:0.5px solid var(--border);font-size:12px;vertical-align:middle;}
+.act-tbl tr:last-child td{border-bottom:none;}
+.pdot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+.pdot.high{background:var(--red);}
+.pdot.med{background:var(--amber);}
+.pdot.low{background:var(--green);}
+.btn-done{background:none;border:0.5px solid var(--border2);border-radius:5px;padding:3px 9px;font-size:11px;cursor:pointer;color:var(--green);}
+.btn-done:hover{background:var(--green-lt);}
+.trial-block{background:var(--bg2);border-radius:var(--r);padding:1rem;margin-bottom:10px;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:200;}
+.modal{background:var(--bg);border-radius:var(--rl);padding:1.5rem;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.2);}
+.modal-title{font-size:15px;font-weight:700;margin-bottom:1.25rem;}
+.f-row{margin-bottom:12px;}
+.f-lbl{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:4px;}
+.f-row input,.f-row select,.f-row textarea{width:100%;border:0.5px solid var(--border2);border-radius:8px;padding:9px 11px;font-size:13px;background:var(--bg);color:var(--text);font-family:inherit;outline:none;}
+.f-row input:focus,.f-row select:focus,.f-row textarea:focus{border-color:var(--blue);}
+.f-row textarea{resize:vertical;min-height:70px;}
+.f-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.f-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem;padding-top:1rem;border-top:0.5px solid var(--border);}
+.btn-cancel{background:none;border:0.5px solid var(--border2);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;}
+.btn-save{background:var(--blue);color:white;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;}
+.empty{text-align:center;padding:2rem;color:var(--text3);font-size:13px;}
+.chip{display:inline-block;background:var(--bg2);border:0.5px solid var(--border);border-radius:5px;padding:2px 9px;font-size:11px;margin-right:4px;}
+.dev-note{background:var(--amber-lt);border-radius:8px;padding:10px 14px;font-size:12px;color:#633806;margin-bottom:1rem;}
+.sync-ind{position:fixed;bottom:16px;right:16px;background:var(--green);color:white;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;z-index:100;display:none;}
+.sync-ind.saving{background:var(--amber);}
+.pdf-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border);}
+.pdf-item:last-child{border-bottom:none;}
+.pdf-icon{width:32px;height:32px;background:var(--red-lt);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--red);flex-shrink:0;}
+.upload-bar-wrap{height:6px;background:var(--border2);border-radius:3px;margin:8px 0;}
+.upload-bar-fill{height:6px;border-radius:3px;background:var(--blue);}
+@media print{.sidebar,.btn-primary,.btn-teal,.btn-outline,.no-print{display:none!important;}.main{margin-left:0!important;padding:0!important;}}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div style="text-align:center;margin-bottom:1rem;">
+      <img src="data:image/png;base64,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" alt="Kumar Industries" style="width:160px;"/>
+    </div>
+    <div class="login-title">Kumar Industries</div>
+    <div class="login-sub">NPD Management System</div>
+    <div class="login-field">
+      <label class="login-label">Email</label>
+      <input class="login-input" id="li-email" type="email" placeholder="your@kumarindus.com"/>
+    </div>
+    <div class="login-field">
+      <label class="login-label">Password</label>
+      <input class="login-input" id="li-pass" type="password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="li-err"></div>
+    <div class="login-loading" id="li-load">Signing in...</div>
+  </div>
+</div>
+
+<div id="app-screen">
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="logo-wrap">
+        <img src="data:image/png;base64,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" style="width:100%;max-width:170px;display:block;margin:0 auto 8px;"/>
+        <div class="logo-name">Kumar Industries</div>
+        <div class="logo-sub">NPD System · Live</div>
+      </div>
+      <div class="user-pill">
+        <div class="user-name" id="sb-name">—</div>
+        <div class="user-role" id="sb-role">—</div>
+      </div>
+      <div class="nav-label">NPD</div>
+      <div class="nav-item active" onclick="setPage('dashboard',this)">Dashboard</div>
+      <div class="nav-item" onclick="setPage('projects',this)">All Projects</div>
+      <div class="nav-item" onclick="setPage('actions',this)">Open Actions</div>
+      <div class="nav-item" onclick="setPage('gantt',this)">Timeline</div>
+      <div class="nav-label">Kaizen</div>
+      <div class="nav-item" onclick="setPage('kaizen',this)">All Kaizen</div>
+      <div class="nav-item" onclick="setKFilter('Safety',this)">Safety</div>
+      <div class="nav-item" onclick="setKFilter('Quality',this)">Quality</div>
+      <div class="nav-item" onclick="setKFilter('Cost',this)">Cost</div>
+      <div class="nav-item" onclick="setKFilter('Delivery',this)">Delivery</div>
+      <div class="nav-item" onclick="setKFilter('Productivity',this)">Productivity</div>
+      <div class="nav-label">Reports</div>
+      <div class="nav-item" id="nav-reports" onclick="setPage('reports',this)">All Reports</div>
+      <div class="nav-label">Customers</div>
+      <div class="nav-item" onclick="setPage('customers',this)">Customer Database</div>
+      <div class="nav-item" onclick="setCFilter('Ashok Leyland',this)">Ashok Leyland</div>
+      <div class="nav-item" onclick="setCFilter('ZF',this)">ZF</div>
+      <div class="nav-item" onclick="setCFilter('Salcomp',this)">Salcomp</div>
+      <div class="nav-item" onclick="setCFilter('TVS',this)">TVS</div>
+      <div class="sidebar-footer">
+        <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+        <div style="font-size:10px;color:var(--text3);">IATF 16949 · ISO 9001</div>
+      </div>
+    </aside>
+    <main class="main">
+      <div id="pg-dashboard"></div>
+      <div id="pg-projects" style="display:none"></div>
+      <div id="pg-actions" style="display:none"></div>
+      <div id="pg-gantt" style="display:none"></div>
+      <div id="pg-kaizen" style="display:none"></div>
+      <div id="pg-reports" style="display:none"></div>
+      <div id="pg-customers" style="display:none"></div>
+    </main>
+  </div>
+</div>
+<div id="modal-root"></div>
+<div class="sync-ind" id="sync-ind">Saving...</div>
+
+<script>
+// ── FIREBASE ──────────────────────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey:'AIzaSyBc9XkOZIeWgS_ublfrvcFpdPzUCC6ZTCw',
+  authDomain:'npd-kumar-industries.firebaseapp.com',
+  projectId:'npd-kumar-industries',
+  storageBucket:'npd-kumar-industries.firebasestorage.app',
+  messagingSenderId:'671220296705',
+  appId:'1:671220296705:web:9a5932a8395ed11754e400'
+});
+const auth=firebase.auth(), db=firebase.firestore(), storage=firebase.storage();
+
+// ── CONSTANTS ─────────────────────────────────────────────────────────────
+const ROLES={
+  'aishwarya@kumarindus.com':    {r:'NPD Head',       edit:1,approve:1,addP:1,addK:1,rep:1,del:1},
+  'balaji.j@kumarindus.com':     {r:'NPD Lead',       edit:1,approve:0,addP:1,addK:1,rep:1,del:0},
+  'tamilselvan.s@kumarindus.com':{r:'NPD Designer',   edit:1,approve:0,addP:0,addK:1,rep:0,del:0},
+  'npd4@kumarindus.com':         {r:'NPD Designer',   edit:1,approve:0,addP:0,addK:1,rep:0,del:0},
+  'vasanth.kumar@kumarindus.com':{r:'NPD Designer',   edit:1,approve:0,addP:0,addK:1,rep:0,del:0},
+  'aravindhan.r@kumarindus.com': {r:'Quality Head',   edit:1,approve:1,addP:0,addK:1,rep:1,del:0},
+  'barathkumar.j@kumarindus.com':{r:'Quality Eng',    edit:1,approve:0,addP:0,addK:1,rep:0,del:0},
+  'baskaran.d@kumarindus.com':   {r:'Quality Eng',    edit:1,approve:0,addP:0,addK:1,rep:0,del:0},
+  'sumithra.m@kumarindus.com':   {r:'Quality Eng',    edit:1,approve:0,addP:0,addK:1,rep:0,del:0},
+  'asir.singh@kumarindus.com':   {r:'Tool Room Lead', edit:1,approve:0,addP:0,addK:1,rep:0,del:0},
+  'vigneshwar@kumarindus.com':   {r:'CEO',            edit:0,approve:0,addP:0,addK:0,rep:1,del:0},
+  'javith.basha@kumarindus.com': {r:'Plant 1 Head',   edit:0,approve:0,addP:0,addK:0,rep:1,del:0},
+  'gnanasekaran.g@kumarindus.com':{r:'Plant 2 Head',  edit:0,approve:0,addP:0,addK:0,rep:1,del:0}
+};
+const GATE_APPROVERS={0:'aishwarya@kumarindus.com',1:'aravindhan.r@kumarindus.com',2:'aishwarya@kumarindus.com',3:'aravindhan.r@kumarindus.com',4:'aishwarya@kumarindus.com'};
+const GATE_APPROVER_ROLES=['NPD Head','Quality Head','NPD Head','Quality Head','NPD Head'];
+const GATE_NAMES=['Enquiry & Feasibility','APQP & Planning','Tooling & Development','PPAP & Trials','Customer Approval'];
+const GATE_SHORT=['Enquiry','APQP','Tooling','PPAP','Approval'];
+const GATE_CL={
+  0:['Customer RFQ received & reviewed','Customer drawing received','Balloon drawing preparation','Drawing review completed (GD&T, tolerances)','Feasibility report prepared','Process Capability study (Cp|Cpk plan)','Cost estimation completed','RM availability report with vendor name','Capacity study & confirmation'],
+  1:['APQP plan / timeline created','DFMEA initiated','PFMEA initiated','Process flow diagram prepared','Control plan drafted','MSA plan ready','Gauge / fixture requirement list','APQP tracker updated'],
+  2:['Tool design approved','Trial schedule finalized','Raw material approval (incoming inspection)','Tooling milestone updated (Design>Machining>Tryout>Approved)','Tool tryout dimensional report','Tryout report prepared'],
+  3:['Dimensional report (balloon drawing)','Balloon drawing (PPAP final)','Material certificate','PFMEA final','Control plan approved','PSW (Part Submission Warrant)','Appearance Approval Report (AAR)','Customer PPAP submission acknowledgement'],
+  4:['SOP / Work instruction approved','Packaging standard & label approval','CSR checklist complete','First Article Inspection (FAI) report approved','Mass production readiness sign-off']
+};
+const CUSTOMERS=['Ashok Leyland','ZF','Salcomp','TVS','Other'];
+const OWNERS=['NPD Lead','Designer','Quality Head','Quality Engineer','Tool Room Lead','Plant Head','Management'];
+const PPAP_LEVELS=['Level 1','Level 2','Level 3','Level 4','Level 5'];
+const COMM_TYPES=['Email','Phone Call','Meeting','Site Visit','Video Call'];
+const STATUS_COLOR={enquiry:'#185FA5',apqp:'#BA7517',tooling:'#534AB7',ppap:'#0F6E56',approved:'#3B6D11',hold:'#A32D2D'};
+const KZ_STATUSES=['Open','In Progress','Verification','Closed','On Hold'];
+const KZ_CATS=['Safety','Quality','Cost','Delivery','Productivity'];
+const KZ_DEPTS=['NPD','Quality','Production','Tool Room','Store','Maintenance','HR','Finance'];
+const ALL_USERS=[
+  {n:'Aishwarya',r:'NPD Head'},{n:'Balaji J',r:'NPD Lead'},{n:'Tamilselvan S',r:'NPD Designer'},
+  {n:'NPD Designer 2',r:'NPD Designer'},{n:'Vasanth Kumar',r:'NPD Designer'},
+  {n:'Aravindhan R',r:'Quality Head'},{n:'Barathkumar J',r:'Quality Eng'},
+  {n:'Baskaran D',r:'Quality Eng'},{n:'Sumithra M',r:'Quality Eng'},
+  {n:'Asir Singh',r:'Tool Room Lead'},{n:'Vigneshwar',r:'CEO'},
+  {n:'Javith Basha',r:'Plant 1 Head'},{n:'Gnanasekaran G',r:'Plant 2 Head'}
+];
+
+function safeKey(k){return k.replace(/[/()]/g,'|').replace(/>/g,'>').replace(/  +/g,' ').trim();}
+function makeChecklist(){
+  var c={};
+  for(var g=0;g<5;g++) GATE_CL[g].forEach(function(i){c[safeKey(g+'-'+i)]=false;});
+  return c;
+}
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+var cu=null, cui=null;
+var projects=[], kaizens=[], customers=[];
+var page='dashboard', selId=null, selKid=null, custF=null, kFilter=null;
+var pListener=null, kListener=null, cListener=null;
+
+// ── AUTH ──────────────────────────────────────────────────────────────────
+function doLogin(){
+  var email=document.getElementById('li-email').value.trim();
+  var pass=document.getElementById('li-pass').value;
+  document.getElementById('li-err').style.display='none';
+  document.getElementById('li-load').style.display='block';
+  auth.signInWithEmailAndPassword(email,pass).catch(function(e){
+    document.getElementById('li-load').style.display='none';
+    document.getElementById('li-err').style.display='block';
+    document.getElementById('li-err').textContent='Invalid email or password.';
+  });
+}
+function doLogout(){
+  if(pListener) pListener();
+  if(kListener) kListener();
+  if(cListener) cListener();
+  auth.signOut();
+}
+auth.onAuthStateChanged(function(user){
+  if(user){
+    cu=user;
+    cui=ROLES[user.email.toLowerCase()]||{r:'Viewer',edit:0,approve:0,addP:0,addK:0,rep:0,del:0};
+    document.getElementById('li-load').style.display='none';
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app-screen').style.display='block';
+    document.getElementById('sb-name').textContent=user.email.split('@')[0].replace(/\./g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});
+    document.getElementById('sb-role').textContent=cui.r;
+    if(!cui.rep) document.getElementById('nav-reports').style.display='none';
+    startListening();
+    renderPage('dashboard');
+  } else {
+    cu=null; cui=null; projects=[]; kaizens=[];
+    document.getElementById('login-screen').style.display='flex';
+    document.getElementById('app-screen').style.display='none';
+  }
+});
+
+// ── FIRESTORE ─────────────────────────────────────────────────────────────
+function startListening(){
+  if(pListener) pListener();
+  pListener=db.collection('projects').orderBy('createdAt','desc').onSnapshot(function(s){
+    projects=s.docs.map(function(d){return Object.assign({id:d.id},d.data());});
+    renderPage(page);
+    if(selId&&page==='projects'){
+      var dc=document.getElementById('inline-drawer-'+selId);
+      var p=projects.find(function(x){return x.id===selId;});
+      if(dc&&p) dc.innerHTML=drawerHTML(p);
+    }
+  },function(e){console.error(e);});
+  if(kListener) kListener();
+  kListener=db.collection('kaizen_projects').orderBy('createdAt','desc').onSnapshot(function(s){
+    kaizens=s.docs.map(function(d){return Object.assign({id:d.id},d.data());});
+    if(page==='kaizen') renderPage('kaizen');
+    if(page==='dashboard') renderPage('dashboard');
+    if(selKid&&page==='kaizen'){
+      var dc=document.getElementById('kz-drawer-'+selKid);
+      var k=kaizens.find(function(x){return x.id===selKid;});
+      if(dc&&k) dc.innerHTML=kzDrawer(k);
+    }
+  },function(e){console.error(e);});
+  if(cListener) cListener();
+  cListener=db.collection('customers_db').orderBy('createdAt','desc').onSnapshot(function(s){
+    customers=s.docs.map(function(d){return Object.assign({id:d.id},d.data());});
+    if(page==='customers') renderPage('customers');
+  },function(e){console.error(e);});
+}
+function showSync(saving){
+  var el=document.getElementById('sync-ind');
+  el.textContent=saving?'Saving...':'Saved ✓';
+  el.className='sync-ind'+(saving?' saving':'');
+  el.style.display='block';
+  if(!saving) setTimeout(function(){el.style.display='none';},2000);
+}
+async function updateP(id,fields){
+  showSync(true);
+  try{await db.collection('projects').doc(id).update(fields);showSync(false);}
+  catch(e){console.error(e);showSync(false);}
+}
+async function updateK(id,fields){
+  showSync(true);
+  try{await db.collection('kaizen_projects').doc(id).update(fields);showSync(false);}
+  catch(e){console.error(e);showSync(false);}
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────
+function badge(s){
+  var m={enquiry:'Enquiry',apqp:'APQP',tooling:'Tooling',ppap:'PPAP & Trials',approved:'Approved',hold:'On Hold'};
+  return '<span class="badge b-'+s+'">'+(m[s]||s)+'</span>';
+}
+function kzBadge(s){
+  var bg={Open:'var(--blue-lt)','In Progress':'var(--amber-lt)',Verification:'var(--purple-lt)',Closed:'var(--green-lt)','On Hold':'var(--red-lt)'};
+  var tx={Open:'var(--blue-dk)','In Progress':'#633806',Verification:'#3C3489',Closed:'#27500A','On Hold':'#791F1F'};
+  return '<span class="badge" style="background:'+(bg[s]||'var(--bg2)')+';color:'+(tx[s]||'var(--text)')+';">'+s+'</span>';
+}
+function dl(d){return Math.ceil((new Date(d)-new Date())/86400000);}
+function fmt(n){return n>=0?'+\u20B9'+n:'\u2212\u20B9'+Math.abs(n);}
+function openActs(p){return (p.actions||[]).filter(function(a){return !a.done;});}
+function allOpenActs(){return projects.flatMap(function(p){return openActs(p).map(function(a){return Object.assign({},a,{partName:p.partName,pid:p.id});});});}
+function gProg(p,g){
+  var items=GATE_CL[g]||[];
+  var cl=p.checklist||{};
+  var done=items.filter(function(i){return cl[safeKey(g+'-'+i)];}).length;
+  return {done:done,total:items.length,pct:Math.round(done/items.length*100)||0};
+}
+function overallPct(p){
+  var all=Object.values(p.checklist||{});
+  if(!all.length) return 0;
+  return Math.round(all.filter(Boolean).length/all.length*100);
+}
+function gApproval(p,g){return (p.gateApprovals||[]).find(function(a){return a.gate===g;});}
+function isLocked(p,g){var a=gApproval(p,g);return a&&a.status==='approved';}
+function canEdit(){return cui&&cui.edit;}
+function canApproveGate(g){return cui&&cui.approve&&GATE_APPROVERS[g]===cu.email;}
+function gBarCls(p,i){
+  if(isLocked(p,i)) return 'done';
+  if(i===(p.currentGate||0)) return 'active';
+  return 'pending';
+}
+function closeModal(){document.getElementById('modal-root').innerHTML='';}
+function v(id){return document.getElementById(id)?document.getElementById(id).value.trim():'';}
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────
+var PAGES=['dashboard','projects','actions','gantt','kaizen','reports','customers'];
+function setPage(name,el){
+  page=name; custF=null; kFilter=null; selId=null; selKid=null;
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  if(el) el.classList.add('active');
+  PAGES.forEach(function(p){document.getElementById('pg-'+p).style.display=p===name?'block':'none';});
+  renderPage(name);
+}
+function setCFilter(c,el){
+  page='projects'; custF=c; selId=null;
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  if(el) el.classList.add('active');
+  PAGES.forEach(function(p){document.getElementById('pg-'+p).style.display=p==='projects'?'block':'none';});
+  renderPage('projects');
+}
+function setKFilter(cat,el){
+  page='kaizen'; kFilter=cat; selKid=null;
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  if(el) el.classList.add('active');
+  PAGES.forEach(function(p){document.getElementById('pg-'+p).style.display=p==='kaizen'?'block':'none';});
+  renderPage('kaizen');
+}
+function renderPage(n){
+  if(n==='dashboard') renderDash();
+  else if(n==='projects') renderProjects();
+  else if(n==='actions') renderActions();
+  else if(n==='gantt') renderGantt();
+  else if(n==='kaizen') renderKaizen();
+  else if(n==='reports') renderReports();
+  else if(n==='customers') renderCustomers();
+}
+// ── DASHBOARD ─────────────────────────────────────────────────────────────
+function renderDash(){
+  var el=document.getElementById('pg-dashboard');
+  var total=projects.length;
+  var openA=allOpenActs().length;
+  var atPpap=projects.filter(function(p){return p.status==='ppap'||p.status==='approved';}).length;
+  var atRisk=projects.filter(function(p){var d=dl(p.targetDate||'');return d<30&&p.status!=='approved';}).length;
+  var kTotal=kaizens.length;
+  var kClosed=kaizens.filter(function(k){return k.status==='Closed';}).length;
+  var html='<div class="topbar"><div><div class="page-title">Dashboard</div>'
+    +'<div class="page-sub">Live · Kumar Industries NPD & Kaizen</div></div>'
+    +'<div style="display:flex;gap:8px;">'
+    +(cui&&cui.addP?'<button class="btn-primary" onclick="openNewProjModal()">+ New NPD Project</button>':'')
+    +(cui&&cui.addK?'<button class="btn-teal" onclick="openNewKzModal()">+ New Kaizen</button>':'')
+    +'</div></div>';
+  html+='<div class="stat-grid">'
+    +'<div class="stat-card"><div class="stat-lbl">NPD Projects</div><div class="stat-val" style="color:var(--blue)">'+total+'</div></div>'
+    +'<div class="stat-card"><div class="stat-lbl">Open Actions</div><div class="stat-val" style="color:var(--amber)">'+openA+'</div></div>'
+    +'<div class="stat-card"><div class="stat-lbl">Kaizen Projects</div><div class="stat-val" style="color:var(--teal)">'+kTotal+'</div></div>'
+    +'<div class="stat-card"><div class="stat-lbl">Kaizen Closed</div><div class="stat-val" style="color:var(--green)">'+kClosed+'</div></div>'
+    +'</div>';
+  // Kaizen category breakdown
+  html+='<div class="card" style="padding:1rem 1.25rem;margin-bottom:1.25rem;display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">';
+  KZ_CATS.forEach(function(cat){
+    var cnt=kaizens.filter(function(k){return k.category===cat;}).length;
+    html+='<div class="info-tile"><div class="info-key">'+cat+'</div>'
+      +'<div style="font-size:18px;font-weight:700;color:var(--teal)">'+cnt+'</div>'
+      +'<div style="font-size:10px;color:var(--text3)">Kaizen</div></div>';
+  });
+  html+='</div>';
+  // Two columns
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem;">';
+  // Project progress
+  html+='<div class="card"><div class="card-title" style="margin-bottom:1rem">Project Progress</div>';
+  if(projects.length){
+    projects.forEach(function(p){
+      html+='<div style="margin-bottom:14px;">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">'
+        +'<div style="font-size:13px;font-weight:600">'+p.partName+'</div>'+badge(p.status||'enquiry')+'</div>'
+        +'<div style="display:flex;align-items:center;gap:8px;">'
+        +'<div style="flex:1;height:5px;background:var(--bg3);border-radius:3px;">'
+        +'<div style="width:'+overallPct(p)+'%;height:5px;border-radius:3px;background:'+(STATUS_COLOR[p.status]||'#185FA5')+'"></div></div>'
+        +'<span style="font-size:11px;color:var(--text3)">'+overallPct(p)+'%</span></div>'
+        +'<div style="font-size:11px;color:var(--text3);margin-top:2px">Gate '+((p.currentGate||0)+1)+': '+GATE_SHORT[p.currentGate||0]+'</div></div>';
+    });
+  } else html+='<div class="empty">No projects yet.</div>';
+  html+='</div>';
+  // Urgent actions
+  html+='<div class="card"><div class="card-title" style="margin-bottom:1rem">Urgent Open Actions</div>';
+  var urgent=allOpenActs().filter(function(a){return a.priority==='high';}).slice(0,6);
+  if(urgent.length){
+    urgent.forEach(function(a){
+      html+='<div style="display:flex;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border)">'
+        +'<span class="pdot high" style="margin-top:4px;flex-shrink:0"></span>'
+        +'<div style="font-size:12px;flex:1"><div style="font-weight:600">'+a.text+'</div>'
+        +'<div style="color:var(--text3);margin-top:1px">'+a.partName+' · '+a.owner+' · Due: '+a.due+'</div></div></div>';
+    });
+  } else html+='<div class="empty">No urgent actions</div>';
+  html+='</div></div>';
+  // Recent projects table
+  html+='<div class="card" style="padding:0;overflow:hidden">'
+    +'<div style="padding:1rem 1.25rem;border-bottom:0.5px solid var(--border)"><div class="card-title">All Projects</div></div>'
+    +projTableHTML(projects)+' </div>';
+  el.innerHTML=html;
+}
+
+// ── PROJECTS ──────────────────────────────────────────────────────────────
+function renderProjects(){
+  var el=document.getElementById('pg-projects');
+  var list=custF?projects.filter(function(p){return p.customer===custF;}):projects;
+  var html='<div class="topbar"><div><div class="page-title">'+(custF?custF+' Projects':'All Projects')+'</div>'
+    +'<div class="page-sub">'+list.length+' project(s) · Click row to expand</div></div>'
+    +'<div style="display:flex;gap:8px;">'
+    +(cui&&cui.addP?'<button class="btn-primary" onclick="openNewProjModal()">+ New NPD Project</button>':'')
+    +(cui&&cui.addK?'<button class="btn-teal" onclick="openNewKzModal()">+ New Kaizen</button>':'')
+    +'</div></div>'
+    +'<div class="card" style="padding:0;overflow:hidden">'+projTableHTML(list,true)+'</div>';
+  el.innerHTML=html;
+}
+
+function projTableHTML(list,clickable){
+  if(!list.length) return '<div class="empty">No projects found.</div>';
+  var html='<table class="tbl"><thead><tr>'
+    +'<th>Part / Number</th><th>Customer</th><th>Status</th><th>Gate Progress</th>'
+    +'<th>Overall</th><th>Target Date</th><th>Actions</th></tr></thead><tbody>';
+  list.forEach(function(p){
+    var d=dl(p.targetDate||'');
+    var dlC=d<0?'color:var(--red)':d<30?'color:var(--amber)':'color:var(--text2)';
+    var gHtml='';
+    GATE_SHORT.forEach(function(g,i){
+      gHtml+='<div class="g-seg"><div class="g-lbl">'+g+'</div><div class="g-bar '+gBarCls(p,i)+'"></div></div>';
+      if(i<4) gHtml+='<div style="color:var(--border2);font-size:9px;">›</div>';
+    });
+    var pct=overallPct(p);
+    var drawerR='';
+    if(clickable&&selId===p.id){
+      drawerR='<tr><td colspan="7" style="padding:0;border-bottom:0.5px solid var(--border)">'
+        +'<div id="inline-drawer-'+p.id+'">'+drawerHTML(p)+'</div></td></tr>';
+    }
+    html+='<tr class="'+(clickable?'clickable':'')+' '+(selId===p.id?'sel':'')+'"'
+      +(clickable?' onclick="toggleDrawer(\''+p.id+'\')"':'')+' >'
+      +'<td><div style="font-weight:600">'+p.partName+'</div>'
+      +'<div style="font-size:11px;color:var(--text3)">'+p.partNo+' · Rev '+p.drawingRev+'</div></td>'
+      +'<td>'+p.customer+'</td>'
+      +'<td>'+badge(p.status||'enquiry')+'</td>'
+      +'<td><div class="gate-bar">'+gHtml+'</div></td>'
+      +'<td><div style="display:flex;align-items:center;gap:6px">'
+      +'<div style="width:60px;height:5px;background:var(--bg3);border-radius:3px">'
+      +'<div style="width:'+pct+'%;height:5px;border-radius:3px;background:'+(STATUS_COLOR[p.status]||'#185FA5')+'"></div></div>'
+      +'<span style="font-size:11px;color:var(--text3)">'+pct+'%</span></div></td>'
+      +'<td style="'+dlC+';font-size:12px">'+( p.targetDate||'—')+'<br>'
+      +'<span style="font-size:11px">'+(d>0?d+'d left':d===0?'Today':'Overdue')+'</span></td>'
+      +'<td style="font-size:11px;color:var(--text3)">'+openActs(p).length+' open</td>'
+      +'</tr>'+drawerR;
+  });
+  html+='</tbody></table>';
+  return html;
+}
+
+function toggleDrawer(id){
+  selId=(selId===id)?null:id;
+  renderProjects();
+  if(selId){
+    setTimeout(function(){
+      var dc=document.getElementById('inline-drawer-'+id);
+      if(dc) dc.scrollIntoView({behavior:'smooth',block:'nearest'});
+    },50);
+  }
+}
+
+// ── DRAWER ────────────────────────────────────────────────────────────────
+function drawerHTML(p){
+  var margin=(p.quotedPrice||0)-(p.targetPrice||0);
+  var d=dl(p.targetDate||'');
+  var canE=canEdit();
+  var html='<div class="drawer">';
+  // Header
+  html+='<div class="drawer-hdr"><div>'
+    +'<div style="font-size:15px;font-weight:700">'+p.partName+' &nbsp; '+badge(p.status||'enquiry')+'</div>'
+    +'<div style="font-size:12px;color:var(--text2)">'+p.partNo+' · Rev '+p.drawingRev+' · '+p.customer+' · Gate '+((p.currentGate||0)+1)+': '+GATE_NAMES[p.currentGate||0]+'</div>'
+    +'</div><div style="display:flex;gap:8px;flex-wrap:wrap">';
+  if(canE){
+    html+='<button class="btn-outline" onclick="openActionModal(\''+p.id+'\')">+ Action</button>'
+      +'<button class="btn-outline" onclick="openCommModal(\''+p.id+'\')">+ Comm</button>'
+      +'<button class="btn-outline" onclick="openDocModal(\''+p.id+'\')">+ Doc</button>'
+      +'<button class="btn-outline" onclick="openRevModal(\''+p.id+'\')">+ Rev</button>'
+      +'<button class="btn-outline" onclick="openTrialModal(\''+p.id+'\')">+ Trial</button>';
+  }
+  if(cui&&cui.del) html+='<button class="btn-outline" style="color:var(--red);border-color:var(--red)" onclick="deleteProj(\''+p.id+'\',\''+p.partName+'\')">Delete</button>';
+  html+='<button class="btn-outline" style="color:var(--red);border-color:var(--red)" onclick="toggleDrawer(\''+p.id+'\')">Close</button>';
+  html+='</div></div>';
+  // Info tiles
+  html+='<div class="info-grid">'
+    +'<div class="info-tile"><div class="info-key">Target Price</div><div class="info-val">&#8377;'+(p.targetPrice||0)+'</div></div>'
+    +'<div class="info-tile"><div class="info-key">Quoted Price</div><div class="info-val">&#8377;'+(p.quotedPrice||0)+'</div></div>'
+    +'<div class="info-tile"><div class="info-key">Price Margin</div><div class="info-val" style="color:'+(margin>=0?'var(--green)':'var(--red)')+'">'+fmt(margin)+'</div></div>'
+    +'<div class="info-tile"><div class="info-key">Tooling Cost</div><div class="info-val">&#8377;'+(((p.toolingCost||0)/1000).toFixed(0))+'K</div></div>'
+    +'<div class="info-tile"><div class="info-key">Start Date</div><div class="info-val">'+(p.startDate||'—')+'</div></div>'
+    +'<div class="info-tile"><div class="info-key">Target Date</div><div class="info-val">'+(p.targetDate||'—')+'</div></div>'
+    +'<div class="info-tile"><div class="info-key">Days Remaining</div><div class="info-val" style="color:'+(d<0?'var(--red)':d<30?'var(--amber)':'var(--green)')+'">'+( d>0?d+'d':d===0?'Today':'Overdue')+'</div></div>'
+    +'<div class="info-tile"><div class="info-key">PPAP</div><div class="info-val">'+(p.ppapLevel||'—')+' · '+(p.ppapStatus||'Not started')+'</div></div>'
+    +'</div>';
+  if(p.deviations&&p.deviations!=='None') html+='<div class="dev-note"><strong>Deviations:</strong> '+p.deviations+'</div>';
+  // Tabs
+  var oa=openActs(p).length;
+  html+='<div class="tab-row" id="dt-'+p.id+'">'
+    +'<div class="tab active" onclick="showTab(\''+p.id+'\',\'gates\',this)">Gate Checklists</div>'
+    +'<div class="tab" onclick="showTab(\''+p.id+'\',\'actions\',this)">Actions ('+oa+')</div>'
+    +'<div class="tab" onclick="showTab(\''+p.id+'\',\'trials\',this)">Trials ('+(p.trials||[]).length+')</div>'
+    +'<div class="tab" onclick="showTab(\''+p.id+'\',\'comm\',this)">Comm Log</div>'
+    +'<div class="tab" onclick="showTab(\''+p.id+'\',\'revs\',this)">Drawing Revs</div>'
+    +'<div class="tab" onclick="showTab(\''+p.id+'\',\'docs\',this)">Documents</div>'
+    +'<div class="tab" onclick="showTab(\''+p.id+'\',\'history\',this)">Approval History</div>'
+    +'</div>';
+  html+='<div id="dt-'+p.id+'-gates">'+gateTabHTML(p)+'</div>'
+    +'<div id="dt-'+p.id+'-actions" style="display:none">'+actionsTabHTML(p)+'</div>'
+    +'<div id="dt-'+p.id+'-trials" style="display:none">'+trialsTabHTML(p)+'</div>'
+    +'<div id="dt-'+p.id+'-comm" style="display:none">'+commTabHTML(p)+'</div>'
+    +'<div id="dt-'+p.id+'-revs" style="display:none">'+revsTabHTML(p)+'</div>'
+    +'<div id="dt-'+p.id+'-docs" style="display:none">'+docsTabHTML(p)+'</div>'
+    +'<div id="dt-'+p.id+'-history" style="display:none">'+historyTabHTML(p)+'</div>'
+    +'</div>';
+  return html;
+}
+
+function showTab(pid,tab,el){
+  document.getElementById('dt-'+pid).querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  el.classList.add('active');
+  ['gates','actions','trials','comm','revs','docs','history'].forEach(function(t){
+    var e=document.getElementById('dt-'+pid+'-'+t);
+    if(e) e.style.display=t===tab?'block':'none';
+  });
+}
+
+// ── GATE TAB ──────────────────────────────────────────────────────────────
+function gateTabHTML(p){
+  var canE=canEdit();
+  var html='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1rem">';
+  for(var g=0;g<5;g++){
+    var prog=gProg(p,g);
+    var active=g===(p.currentGate||0);
+    var locked=isLocked(p,g);
+    var future=g>(p.currentGate||0);
+    var appr=gApproval(p,g);
+    var bc=locked?'var(--green)':active?'var(--blue)':'var(--border)';
+    var tc=locked?'var(--green)':active?'var(--blue)':'var(--text3)';
+    html+='<div style="background:var(--bg2);border:1.5px solid '+bc+';border-radius:var(--r);padding:1rem">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+      +'<div style="font-size:12px;font-weight:700;color:'+tc+'">Gate '+(g+1)+': '+GATE_SHORT[g]+'</div>';
+    if(locked) html+='<span style="font-size:10px;background:var(--green-lt);color:var(--green);padding:2px 8px;border-radius:10px;font-weight:700">✓ APPROVED</span>';
+    else if(active) html+='<span style="font-size:10px;background:var(--blue-lt);color:var(--blue);padding:2px 8px;border-radius:10px;font-weight:700">ACTIVE</span>';
+    else html+='<span style="font-size:10px;color:var(--text3)">'+(g<(p.currentGate||0)?'Completed':'Locked')+'</span>';
+    html+='</div>';
+    // Progress bar
+    html+='<div class="cl-prog" style="margin-bottom:10px">'
+      +'<div class="cl-prog-bar"><div class="cl-prog-fill" style="width:'+prog.pct+'%;background:'+tc+'"></div></div>'
+      +'<div class="cl-prog-lbl">'+prog.done+'/'+prog.total+'</div></div>';
+    // Checklist items
+    GATE_CL[g].forEach(function(item){
+      var key=safeKey(g+'-'+item);
+      var checked=(p.checklist||{})[key];
+      var disabled=future||locked||!canE||!active;
+      html+='<div class="cl-item">'
+        +'<div class="cl-check'+(checked?' checked':'')+(disabled?' disabled':'')+'"'
+        +(!disabled?' onclick="toggleCheck(\''+p.id+'\',\''+key+'\')"':'')
+        +' title="'+(disabled?(locked?'Approved — locked':future?'Future gate':'View only'):'Click to toggle')+'"></div>'
+        +'<div style="font-size:12px;'+(checked?'text-decoration:line-through;color:var(--text3)':'')+'">'+item+'</div>'
+        +'</div>';
+    });
+    // Approval section
+    if(active&&!locked){
+      html+='<div style="margin-top:10px">';
+      if(appr&&appr.status==='rejected'){
+        html+='<div style="font-size:11px;color:var(--red);background:var(--red-lt);border-radius:6px;padding:7px;margin-bottom:6px">Rejected: '+(appr.remark||'No remark')+'</div>';
+      }
+      if(prog.done===prog.total){
+        if(canApproveGate(g)){
+          html+='<button class="btn-primary btn-sm" style="width:100%;background:var(--green)" onclick="openApprovalModal(\''+p.id+'\','+g+')">✓ Approve Gate '+(g+1)+' →</button>';
+        } else {
+          html+='<div style="font-size:11px;color:var(--amber);background:var(--amber-lt);border-radius:6px;padding:7px;text-align:center">All '+prog.total+' items complete ✓<br><strong>Awaiting '+GATE_APPROVER_ROLES[g]+' approval</strong></div>';
+        }
+      } else {
+        html+='<div style="font-size:11px;color:var(--text3);background:var(--bg3);border-radius:6px;padding:7px">'+(prog.total-prog.done)+' item(s) remaining before '+GATE_APPROVER_ROLES[g]+' can approve.</div>';
+      }
+      html+='</div>';
+    }
+    if(locked&&appr) html+='<div style="margin-top:8px;font-size:11px;color:var(--green);border-top:0.5px solid var(--border);padding-top:6px">✓ '+appr.approverName+' · '+appr.date+'</div>';
+    html+='</div>';
+    if(g===1) html+='</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1rem">';
+  }
+  html+='</div>';
+  return html;
+}
+
+// ── ACTIONS TAB ───────────────────────────────────────────────────────────
+function actionsTabHTML(p){
+  var canE=canEdit();
+  var open=openActs(p);
+  var completed=(p.actions||[]).filter(function(a){return a.done;});
+  var html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    +'<div style="font-size:12px;font-weight:700;color:var(--text2)">'+open.length+' open · '+completed.length+' completed</div>'
+    +(canE?'<button class="btn-primary btn-sm" onclick="openActionModal(\''+p.id+'\')">+ Add Action</button>':'')
+    +'</div>';
+  if(open.length){
+    html+='<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:6px">Open</div>'
+      +'<table class="act-tbl" style="margin-bottom:1.25rem"><thead><tr>'
+      +'<th>Pri</th><th>Action</th><th>Owner</th><th>Start</th><th>Due</th>'+(canE?'<th></th>':'')+'</tr></thead><tbody>';
+    open.forEach(function(a,i){
+      var dc=dl(a.due)<0?'var(--red)':dl(a.due)<7?'var(--amber)':'var(--text)';
+      html+='<tr><td><span class="pdot '+a.priority+'"></span></td>'
+        +'<td style="font-weight:500">'+a.text+'</td>'
+        +'<td><span class="chip">'+a.owner+'</span></td>'
+        +'<td style="font-size:11px;color:var(--text3)">'+(a.startDate||'—')+'</td>'
+        +'<td style="color:'+dc+'">'+a.due+'</td>'
+        +(canE?'<td><button class="btn-done" onclick="markActDone(\''+p.id+'\','+i+')">Done</button></td>':'')
+        +'</tr>';
+    });
+    html+='</tbody></table>';
+  } else html+='<div class="empty" style="margin-bottom:1rem">No open actions.</div>';
+  if(completed.length){
+    html+='<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:6px">Completed</div>'
+      +'<table class="act-tbl"><thead><tr><th>Pri</th><th>Action</th><th>Owner</th><th>Start</th><th>Due</th></tr></thead><tbody>';
+    completed.forEach(function(a){
+      html+='<tr style="opacity:0.6"><td><span class="pdot '+a.priority+'"></span></td>'
+        +'<td style="text-decoration:line-through;color:var(--text3)">'+a.text+'</td>'
+        +'<td><span class="chip">'+a.owner+'</span></td>'
+        +'<td style="font-size:11px;color:var(--text3)">'+(a.startDate||'—')+'</td>'
+        +'<td style="color:var(--text3)">'+a.due+'</td></tr>';
+    });
+    html+='</tbody></table>';
+  }
+  return html;
+}
+
+// ── TRIALS TAB ────────────────────────────────────────────────────────────
+function trialsTabHTML(p){
+  var canE=canEdit();
+  var html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    +'<div style="font-size:12px;font-weight:700;color:var(--text2)">Trial / Tryout Log</div>'
+    +(canE?'<button class="btn-primary btn-sm" onclick="openTrialModal(\''+p.id+'\')">+ Add Trial</button>':'')
+    +'</div>';
+  if((p.trials||[]).length){
+    p.trials.forEach(function(t){
+      html+='<div class="trial-block">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+        +'<div style="font-size:13px;font-weight:700">Trial '+t.no+' &nbsp; <span class="badge b-'+(t.result||'').toLowerCase()+'">'+t.result+'</span></div>'
+        +'<div style="font-size:12px;color:var(--text2)">'+t.date+'</div></div>'
+        +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px">'
+        +'<div><span style="color:var(--text3);font-weight:600">Dim Check:</span> <span style="color:'+(t.dimOk?'var(--green)':'var(--red)')+'">'+( t.dimOk?'OK':'NOT OK')+'</span></div>'
+        +'<div><span style="color:var(--text3);font-weight:600">Rejection:</span> '+(t.rejReason||'—')+'</div>'
+        +'<div style="grid-column:span 2"><span style="color:var(--text3);font-weight:600">Corrective Action:</span> '+(t.corrAction||'—')+'</div>'
+        +'</div></div>';
+    });
+  } else html+='<div class="empty">No trials recorded yet.</div>';
+  return html;
+}
+
+// ── COMM TAB ──────────────────────────────────────────────────────────────
+function commTabHTML(p){
+  var canE=canEdit();
+  var html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    +'<div style="font-size:12px;font-weight:700;color:var(--text2)">Communication Log</div>'
+    +(canE?'<button class="btn-primary btn-sm" onclick="openCommModal(\''+p.id+'\')">+ Add</button>':'')
+    +'</div>';
+  var log=(p.commLog||[]).slice().reverse();
+  if(log.length){
+    log.forEach(function(c){
+      html+='<div style="padding:10px 0;border-bottom:0.5px solid var(--border);font-size:12px">'
+        +'<div style="display:flex;gap:10px;align-items:center;margin-bottom:4px">'
+        +'<span class="badge b-enquiry" style="font-size:10px">'+c.type+'</span>'
+        +'<span style="color:var(--text3)">'+c.date+'</span>'
+        +'<span style="font-weight:600">'+c.by+'</span></div>'
+        +'<div>'+c.summary+'</div>'
+        +'<div style="color:var(--text3);margin-top:2px">Outcome: '+c.outcome+'</div></div>';
+    });
+  } else html+='<div class="empty">No communication log yet.</div>';
+  return html;
+}
+
+// ── REVS TAB ──────────────────────────────────────────────────────────────
+function revsTabHTML(p){
+  var canE=canEdit();
+  var html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    +'<div style="font-size:12px;font-weight:700;color:var(--text2)">Drawing Revision History</div>'
+    +(canE?'<button class="btn-primary btn-sm" onclick="openRevModal(\''+p.id+'\')">+ Add Rev</button>':'')
+    +'</div>';
+  var revs=(p.drawingRevisions||[]).slice().reverse();
+  if(revs.length){
+    html+='<table class="act-tbl"><thead><tr><th>Rev</th><th>Date</th><th>Changes</th><th>Approved By</th></tr></thead><tbody>';
+    revs.forEach(function(r){
+      html+='<tr><td><strong style="font-size:14px">'+r.rev+'</strong></td>'
+        +'<td>'+r.date+'</td><td>'+r.changes+'</td><td>'+r.approvedBy+'</td></tr>';
+    });
+    html+='</tbody></table>';
+  } else html+='<div class="empty">No revisions recorded.</div>';
+  return html;
+}
+
+// ── DOCS TAB ──────────────────────────────────────────────────────────────
+function docsTabHTML(p){
+  var canE=canEdit();
+  var docs=p.documents||[];
+  var html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+    +'<div style="font-size:12px;font-weight:700;color:var(--text2)">'+docs.length+' document(s)</div>'
+    +(canE?'<button class="btn-primary btn-sm" onclick="openDocModal(\''+p.id+'\')">+ Upload PDF</button>':'')
+    +'</div>';
+  docs.forEach(function(d,i){
+    html+='<div class="pdf-item">'
+      +'<div class="pdf-icon">PDF</div>'
+      +'<div style="flex:1">'
+      +'<div style="font-weight:500;font-size:12px">'+d.name+'</div>'
+      +'<div style="font-size:11px;color:var(--text3)">Gate '+(( d.gate||0)+1)+': '+GATE_SHORT[d.gate||0]+' · '+(d.type||'Doc')+' · '+(d.fileSize||'')+' · '+(d.date||'')+' · '+(d.addedBy||'')+'</div>'
+      +'</div>'
+      +'<div style="display:flex;gap:6px">'
+      +'<a href="'+d.url+'" target="_blank" style="background:var(--blue-lt);color:var(--blue);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;text-decoration:none">View PDF</a>'
+      +'<a href="'+d.url+'" download="'+(d.fileName||d.name)+'" style="background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;text-decoration:none">Download</a>'
+      +(canE?'<button onclick="deleteDoc(\''+p.id+'\','+i+',\''+(d.filePath||'')+'\')\" style="background:none;border:0.5px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--red);cursor:pointer">✕</button>':'')
+      +'</div></div>';
+  });
+  if(!docs.length) html+='<div class="empty">No documents uploaded yet.</div>';
+  return html;
+}
+
+// ── HISTORY TAB ───────────────────────────────────────────────────────────
+function historyTabHTML(p){
+  var approvals=p.gateApprovals||[];
+  if(!approvals.length) return '<div class="empty">No approvals recorded yet.</div>';
+  var html='';
+  approvals.forEach(function(a){
+    html+='<div class="approval-box '+a.status+'" style="margin-bottom:10px">'
+      +'<div style="font-size:12px;font-weight:700;margin-bottom:8px">Gate '+(a.gate+1)+': '+GATE_NAMES[a.gate]+'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">'
+      +'<div><span style="color:var(--text2)">Approver:</span> <strong>'+a.approverRole+'</strong> — '+a.approverName+'</div>'
+      +'<div><span style="color:var(--text2)">Date:</span> '+a.date+'</div>'
+      +'<div><span style="color:var(--text2)">Decision:</span> <strong style="color:'+(a.status==='approved'?'var(--green)':'var(--red)')+'">'+a.status.toUpperCase()+'</strong></div>'
+      +(a.customerApproval?'<div><span style="color:var(--text2)">Customer:</span> '+a.customerApproval.name+' on '+a.customerApproval.date+'</div>':'<div></div>')
+      +'</div>'
+      +(a.remark?'<div style="margin-top:8px;font-size:12px"><span style="color:var(--text2)">Remark:</span> '+a.remark+'</div>':'')
+      +'</div>';
+  });
+  return html;
+}
+
+// ── ACTIONS PAGE ──────────────────────────────────────────────────────────
+function renderActions(){
+  var el=document.getElementById('pg-actions');
+  var all=allOpenActs().sort(function(a,b){
+    var pr={high:0,med:1,low:2};
+    return (pr[a.priority]||1)-(pr[b.priority]||1)||new Date(a.due)-new Date(b.due);
+  });
+  var html='<div class="topbar"><div><div class="page-title">Open Actions</div>'
+    +'<div class="page-sub">'+all.length+' open · sorted by priority</div></div></div>'
+    +'<div class="card" style="padding:0;overflow:hidden">';
+  if(all.length){
+    html+='<table class="tbl"><thead><tr><th>Priority</th><th>Action</th><th>Project</th><th>Owner</th><th>Start</th><th>Due Date</th></tr></thead><tbody>';
+    all.forEach(function(a){
+      var dc=dl(a.due)<0?'var(--red)':dl(a.due)<7?'var(--amber)':'var(--text)';
+      html+='<tr><td><span class="pdot '+a.priority+'"></span> <span style="font-size:11px;text-transform:capitalize;color:var(--text2)">'+a.priority+'</span></td>'
+        +'<td style="font-weight:500">'+a.text+'</td>'
+        +'<td><span class="chip">'+a.partName+'</span></td>'
+        +'<td>'+a.owner+'</td>'
+        +'<td style="font-size:11px;color:var(--text3)">'+(a.startDate||'—')+'</td>'
+        +'<td style="color:'+dc+'">'+a.due+'</td></tr>';
+    });
+    html+='</tbody></table>';
+  } else html+='<div class="empty">No open actions!</div>';
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+// ── GANTT ─────────────────────────────────────────────────────────────────
+function renderGantt(){
+  var el=document.getElementById('pg-gantt');
+  if(!projects.length){
+    el.innerHTML='<div class="topbar"><div><div class="page-title">Timeline</div></div></div><div class="card"><div class="empty">No projects yet.</div></div>';
+    return;
+  }
+  var now=new Date();
+  var allD=projects.flatMap(function(p){return [new Date(p.startDate||now),new Date(p.targetDate||now)];});
+  var minD=new Date(Math.min.apply(null,allD)),maxD=new Date(Math.max.apply(null,allD));
+  var span=(maxD-minD)||1;
+  var html='<div class="topbar"><div><div class="page-title">Project Timeline</div><div class="page-sub">Red line = today</div></div></div>'
+    +'<div class="card"><div style="overflow-x:auto"><table style="width:100%;min-width:700px;border-collapse:collapse">'
+    +'<thead><tr><th style="text-align:left;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;padding:8px 12px;border-bottom:0.5px solid var(--border);width:180px">Part</th>'
+    +'<th style="text-align:left;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;padding:8px 12px;border-bottom:0.5px solid var(--border)">Timeline</th>'
+    +'<th style="text-align:left;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;padding:8px 12px;border-bottom:0.5px solid var(--border);width:100px">Target</th></tr></thead><tbody>';
+  projects.forEach(function(p){
+    var s=new Date(p.startDate||minD),e=new Date(p.targetDate||maxD);
+    var lp=((s-minD)/span*100).toFixed(1);
+    var wp=((e-s)/span*100).toFixed(1);
+    var np=Math.min(100,Math.max(0,(now-minD)/span*100)).toFixed(1);
+    html+='<tr><td style="padding:10px 12px;font-weight:600;font-size:12px;border-bottom:0.5px solid var(--border)">'+p.partName+'<div style="font-size:11px;color:var(--text3)">'+p.customer+'</div></td>'
+      +'<td style="padding:10px 12px;border-bottom:0.5px solid var(--border)">'
+      +'<div style="position:relative;height:18px;background:var(--bg2);border-radius:4px">'
+      +'<div style="position:absolute;left:'+lp+'%;width:'+wp+'%;height:18px;background:'+(STATUS_COLOR[p.status]||'#185FA5')+';border-radius:4px;opacity:0.8"></div>'
+      +'<div style="position:absolute;left:'+np+'%;top:-2px;width:2px;height:22px;background:var(--red)"></div>'
+      +'</div></td>'
+      +'<td style="padding:10px 12px;font-size:12px;border-bottom:0.5px solid var(--border)">'+(p.targetDate||'—')+'</td></tr>';
+  });
+  html+='</tbody></table></div></div>';
+  el.innerHTML=html;
+}
+
+// ── KAIZEN PAGE ───────────────────────────────────────────────────────────
+function renderKaizen(){
+  var el=document.getElementById('pg-kaizen');
+  var list=kFilter?kaizens.filter(function(k){return k.category===kFilter;}):kaizens;
+  var open=list.filter(function(k){return k.status!=='Closed'&&k.status!=='On Hold';}).length;
+  var html='<div class="topbar"><div><div class="page-title">'+(kFilter?kFilter+' Kaizen':'All Kaizen Projects')+'</div>'
+    +'<div class="page-sub">'+list.length+' project(s) · '+open+' active</div></div>'
+    +(cui&&cui.addK?'<button class="btn-teal" onclick="openNewKzModal()">+ New Kaizen</button>':'')
+    +'</div>';
+  // Filter buttons
+  html+='<div style="display:flex;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap">'
+    +'<button class="btn-outline" style="'+(kFilter===null?'background:var(--teal);color:white;border-color:var(--teal)':'')+'" onclick="setPage(\'kaizen\',null)">All</button>';
+  KZ_CATS.forEach(function(cat){
+    html+='<button class="btn-outline" style="'+(kFilter===cat?'background:var(--teal);color:white;border-color:var(--teal)':'')+'" onclick="setKFilter(\''+cat+'\',null)">'+cat+'</button>';
+  });
+  html+='</div><div class="card" style="padding:0;overflow:hidden">';
+  if(list.length){
+    html+='<table class="tbl"><thead><tr>'
+      +'<th>Project</th><th>Category</th><th>Department</th><th>Status</th><th>Team</th><th>Target</th><th>Checklist</th>'
+      +'</tr></thead><tbody>';
+    list.forEach(function(k){
+      var done=(k.checklist||[]).filter(function(c){return c.done;}).length;
+      var total=(k.checklist||[]).length;
+      var pct=total?Math.round(done/total*100):0;
+      var d=dl(k.targetDate||'');
+      var dlC=d<0?'color:var(--red)':d<30?'color:var(--amber)':'color:var(--text2)';
+      var drawerR='';
+      if(selKid===k.id){
+        drawerR='<tr><td colspan="7" style="padding:0;border-bottom:0.5px solid var(--border)">'
+          +'<div id="kz-drawer-'+k.id+'">'+kzDrawer(k)+'</div></td></tr>';
+      }
+      html+='<tr class="clickable '+(selKid===k.id?'sel':'')+'" onclick="toggleKzDrawer(\''+k.id+'\')">'
+        +'<td><div style="font-weight:600">'+k.title+'</div>'
+        +'<div style="font-size:11px;color:var(--text3)">'+(k.problemStatement?(k.problemStatement.substring(0,50)+'...'):'')+'</div></td>'
+        +'<td><span style="background:var(--teal-lt);color:var(--teal);padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700">'+k.category+'</span></td>'
+        +'<td style="font-size:12px">'+(k.department||'—')+'</td>'
+        +'<td>'+kzBadge(k.status||'Open')+'</td>'
+        +'<td style="font-size:11px;color:var(--text2)">'+((k.teamMembers||[]).join(', ').substring(0,30)||'—')+'</td>'
+        +'<td style="'+dlC+';font-size:12px">'+(k.targetDate||'—')+'</td>'
+        +'<td><div style="display:flex;align-items:center;gap:6px">'
+        +'<div style="width:50px;height:5px;background:var(--bg3);border-radius:3px">'
+        +'<div style="width:'+pct+'%;height:5px;border-radius:3px;background:var(--teal)"></div></div>'
+        +'<span style="font-size:11px;color:var(--text3)">'+done+'/'+total+'</span></div></td>'
+        +'</tr>'+drawerR;
+    });
+    html+='</tbody></table>';
+  } else html+='<div class="empty">No Kaizen projects yet. Click &quot;+ New Kaizen&quot; to start.</div>';
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function toggleKzDrawer(id){
+  selKid=(selKid===id)?null:id;
+  renderKaizen();
+  if(selKid){
+    setTimeout(function(){
+      var dc=document.getElementById('kz-drawer-'+id);
+      if(dc) dc.scrollIntoView({behavior:'smooth',block:'nearest'});
+    },50);
+  }
+}
+
+// ── KAIZEN DRAWER ─────────────────────────────────────────────────────────
+function kzDrawer(k){
+  var canE=canEdit()||(cui&&cui.addK);
+  var done=(k.checklist||[]).filter(function(c){return c.done;}).length;
+  var total=(k.checklist||[]).length;
+  var oa=(k.kActions||[]).filter(function(a){return !a.done;}).length;
+  var html='<div class="drawer"><div class="drawer-hdr"><div>'
+    +'<div style="font-size:15px;font-weight:700">'+k.title+' &nbsp; '+kzBadge(k.status||'Open')+'</div>'
+    +'<div style="font-size:12px;color:var(--text2)">'+k.category+' · '+(k.department||'—')+' · Target: '+(k.targetDate||'—')+'</div>'
+    +'</div><div style="display:flex;gap:8px;flex-wrap:wrap">';
+  if(canE){
+    html+='<button class="btn-outline" onclick="openKzStatusModal(\''+k.id+'\')">Update Status</button>'
+      +'<button class="btn-outline" onclick="openKzCheckModal(\''+k.id+'\')">+ Checklist Item</button>'
+      +'<button class="btn-outline" onclick="openKzActionModal(\''+k.id+'\')">+ Action</button>'
+      +'<button class="btn-outline" onclick="openKzDocModal(\''+k.id+'\')">+ Document</button>'
+      +'<button class="btn-outline" onclick="openKzCommModal(\''+k.id+'\')">+ Comm</button>';
+  }
+  if(cui&&cui.del) html+='<button class="btn-outline" style="color:var(--red);border-color:var(--red)" onclick="deleteKz(\''+k.id+'\',\''+k.title+'\')">Delete</button>';
+  html+='<button class="btn-outline" style="color:var(--red);border-color:var(--red)" onclick="toggleKzDrawer(\''+k.id+'\')">Close</button>'
+    +'</div></div>';
+  // Info
+  html+='<div class="info-grid">'
+    +'<div class="info-tile"><div class="info-key">Category</div><div class="info-val" style="color:var(--teal)">'+k.category+'</div></div>'
+    +'<div class="info-tile"><div class="info-key">Department</div><div class="info-val">'+(k.department||'—')+'</div></div>'
+    +'<div class="info-tile"><div class="info-key">Target Date</div><div class="info-val">'+(k.targetDate||'—')+'</div></div>'
+    +'<div class="info-tile"><div class="info-key">Est. Savings</div><div class="info-val">'+(k.savings||'—')+'</div></div>'
+    +'</div>';
+  html+='<div style="background:var(--bg2);border-radius:8px;padding:10px 14px;margin-bottom:1.25rem;font-size:12px">'
+    +'<div style="font-weight:700;color:var(--text2);margin-bottom:4px">Problem Statement</div>'
+    +'<div>'+(k.problemStatement||'—')+'</div></div>';
+  html+='<div style="background:var(--bg2);border-radius:8px;padding:10px 14px;margin-bottom:1.25rem;font-size:12px">'
+    +'<div style="font-weight:700;color:var(--text2);margin-bottom:6px">Team Members</div>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap">';
+  (k.teamMembers||[]).forEach(function(m){html+='<span class="chip">'+m+'</span>';});
+  if(!(k.teamMembers||[]).length) html+='—';
+  html+='</div></div>';
+  // Tabs
+  html+='<div class="tab-row" id="kzt-'+k.id+'">'
+    +'<div class="tab active" onclick="showKzTab(\''+k.id+'\',\'checklist\',this)">Checklist ('+done+'/'+total+')</div>'
+    +'<div class="tab" onclick="showKzTab(\''+k.id+'\',\'actions\',this)">Actions ('+oa+')</div>'
+    +'<div class="tab" onclick="showKzTab(\''+k.id+'\',\'docs\',this)">Documents ('+(k.documents||[]).length+')</div>'
+    +'<div class="tab" onclick="showKzTab(\''+k.id+'\',\'comm\',this)">Comm Log</div>'
+    +'</div>';
+  html+='<div id="kzt-'+k.id+'-checklist">'+kzChecklistHTML(k)+'</div>'
+    +'<div id="kzt-'+k.id+'-actions" style="display:none">'+kzActionsHTML(k)+'</div>'
+    +'<div id="kzt-'+k.id+'-docs" style="display:none">'+kzDocsHTML(k)+'</div>'
+    +'<div id="kzt-'+k.id+'-comm" style="display:none">'+kzCommHTML(k)+'</div>'
+    +'</div>';
+  return html;
+}
+
+function showKzTab(kid,tab,el){
+  document.getElementById('kzt-'+kid).querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  el.classList.add('active');
+  ['checklist','actions','docs','comm'].forEach(function(t){
+    var e=document.getElementById('kzt-'+kid+'-'+t);
+    if(e) e.style.display=t===tab?'block':'none';
+  });
+}
+
+function kzChecklistHTML(k){
+  var canE=canEdit()||(cui&&cui.addK);
+  var items=k.checklist||[];
+  var done=items.filter(function(c){return c.done;}).length;
+  var pct=items.length?Math.round(done/items.length*100):0;
+  var html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    +'<div style="font-size:12px;font-weight:700;color:var(--text2)">'+done+'/'+items.length+' complete · '+pct+'%</div>'
+    +(canE?'<button class="btn-teal btn-sm" onclick="openKzCheckModal(\''+k.id+'\')">+ Add Item</button>':'')
+    +'</div>'
+    +'<div class="cl-prog" style="margin-bottom:1rem">'
+    +'<div class="cl-prog-bar"><div class="cl-prog-fill" style="width:'+pct+'%;background:var(--teal)"></div></div>'
+    +'<div class="cl-prog-lbl">'+pct+'%</div></div>';
+  if(items.length){
+    items.forEach(function(item,i){
+      var cs=item.done?'background:var(--teal);border-color:var(--teal);':'';
+      var ts=item.done?'text-decoration:line-through;color:var(--text3)':'';
+      html+='<div class="cl-item">'
+        +'<div class="cl-check'+(item.done?' checked':'')+'" style="'+cs+'"'
+        +(canE?' onclick="toggleKzCheck(\''+k.id+'\','+i+')"':'')
+        +' title="'+(canE?'Click to toggle':'View only')+'"></div>'
+        +'<div style="flex:1;font-size:12px;'+ts+'">'+item.text+'</div>'
+        +'<div style="font-size:11px;color:var(--text3)">'+(item.addedBy||'')+'</div>'
+        +'</div>';
+    });
+  } else html+='<div class="empty">No checklist items yet. Click &quot;+ Add Item&quot; to begin.</div>';
+  return html;
+}
+
+function kzActionsHTML(k){
+  var canE=canEdit()||(cui&&cui.addK);
+  var open=(k.kActions||[]).filter(function(a){return !a.done;});
+  var completed=(k.kActions||[]).filter(function(a){return a.done;});
+  var html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    +'<div style="font-size:12px;font-weight:700;color:var(--text2)">'+open.length+' open · '+completed.length+' completed</div>'
+    +(canE?'<button class="btn-teal btn-sm" onclick="openKzActionModal(\''+k.id+'\')">+ Add Action</button>':'')
+    +'</div>';
+  if(open.length){
+    html+='<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:6px">Open</div>'
+      +'<table class="act-tbl" style="margin-bottom:1.25rem"><thead><tr>'
+      +'<th>Pri</th><th>Action</th><th>Owner</th><th>Start</th><th>Due</th>'+(canE?'<th></th>':'')+'</tr></thead><tbody>';
+    open.forEach(function(a,i){
+      var dc=dl(a.due)<0?'var(--red)':dl(a.due)<7?'var(--amber)':'var(--text)';
+      html+='<tr><td><span class="pdot '+a.priority+'"></span></td>'
+        +'<td style="font-weight:500">'+a.text+'</td>'
+        +'<td><span class="chip">'+a.owner+'</span></td>'
+        +'<td style="font-size:11px;color:var(--text3)">'+(a.startDate||'—')+'</td>'
+        +'<td style="color:'+dc+'">'+a.due+'</td>'
+        +(canE?'<td><button class="btn-done" onclick="markKzActDone(\''+k.id+'\','+i+')">Done</button></td>':'')
+        +'</tr>';
+    });
+    html+='</tbody></table>';
+  } else html+='<div class="empty" style="margin-bottom:1rem">No open actions.</div>';
+  if(completed.length){
+    html+='<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:6px">Completed</div>'
+      +'<table class="act-tbl"><thead><tr><th>Pri</th><th>Action</th><th>Owner</th><th>Start</th><th>Due</th></tr></thead><tbody>';
+    completed.forEach(function(a){
+      html+='<tr style="opacity:0.6"><td><span class="pdot '+a.priority+'"></span></td>'
+        +'<td style="text-decoration:line-through;color:var(--text3)">'+a.text+'</td>'
+        +'<td><span class="chip">'+a.owner+'</span></td>'
+        +'<td style="font-size:11px;color:var(--text3)">'+(a.startDate||'—')+'</td>'
+        +'<td style="color:var(--text3)">'+a.due+'</td></tr>';
+    });
+    html+='</tbody></table>';
+  }
+  return html;
+}
+
+function kzDocsHTML(k){
+  var canE=canEdit()||(cui&&cui.addK);
+  var docs=k.documents||[];
+  var html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    +'<div style="font-size:12px;font-weight:700;color:var(--text2)">'+docs.length+' document(s)</div>'
+    +(canE?'<button class="btn-teal btn-sm" onclick="openKzDocModal(\''+k.id+'\')">+ Upload PDF</button>':'')
+    +'</div>';
+  docs.forEach(function(d,i){
+    html+='<div class="pdf-item">'
+      +'<div class="pdf-icon">PDF</div>'
+      +'<div style="flex:1"><div style="font-weight:500;font-size:12px">'+d.name+'</div>'
+      +'<div style="font-size:11px;color:var(--text3)">'+(d.type||'Doc')+' · '+(d.fileSize||'')+' · '+(d.date||'')+' · '+(d.addedBy||'')+'</div></div>'
+      +'<div style="display:flex;gap:6px">'
+      +'<a href="'+d.url+'" target="_blank" style="background:var(--teal-lt);color:var(--teal);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;text-decoration:none">View PDF</a>'
+      +'<a href="'+d.url+'" download style="background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;text-decoration:none">Download</a>'
+      +(canE?'<button onclick="deleteKzDoc(\''+k.id+'\','+i+',\''+(d.filePath||'')+'\')\" style="background:none;border:0.5px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--red);cursor:pointer">✕</button>':'')
+      +'</div></div>';
+  });
+  if(!docs.length) html+='<div class="empty">No documents yet.</div>';
+  return html;
+}
+
+function kzCommHTML(k){
+  var canE=canEdit()||(cui&&cui.addK);
+  var log=(k.commLog||[]).slice().reverse();
+  var html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    +'<div style="font-size:12px;font-weight:700;color:var(--text2)">Communication Log</div>'
+    +(canE?'<button class="btn-teal btn-sm" onclick="openKzCommModal(\''+k.id+'\')">+ Add</button>':'')
+    +'</div>';
+  if(log.length){
+    log.forEach(function(c){
+      html+='<div style="padding:10px 0;border-bottom:0.5px solid var(--border);font-size:12px">'
+        +'<div style="display:flex;gap:10px;align-items:center;margin-bottom:4px">'
+        +'<span class="badge b-enquiry" style="font-size:10px">'+c.type+'</span>'
+        +'<span style="color:var(--text3)">'+c.date+'</span>'
+        +'<span style="font-weight:600">'+c.by+'</span></div>'
+        +'<div>'+c.summary+'</div>'
+        +'<div style="color:var(--text3);margin-top:2px">Outcome: '+(c.outcome||'—')+'</div></div>';
+    });
+  } else html+='<div class="empty">No communication log yet.</div>';
+  return html;
+}
+
+// ── REPORTS ───────────────────────────────────────────────────────────────
+function renderReports(){
+  var el=document.getElementById('pg-reports');
+  if(!cui||!cui.rep){el.innerHTML='<div class="card"><div class="empty">Access restricted.</div></div>';return;}
+  var html='<div class="topbar"><div><div class="page-title">Reports</div><div class="page-sub">Generate, print or export</div></div>'
+    +'<button class="btn-primary no-print" onclick="window.print()">&#128424; Print / PDF</button></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem" class="no-print">';
+  [['NPD Summary','All projects overview','rpt-summary'],['Gate-wise Status','Projects by gate','rpt-gates'],
+   ['Open Actions','Owner-wise tasks','rpt-actions'],['PPAP Status','PPAP submission status','rpt-ppap'],
+   ['Customer-wise','Projects by customer','rpt-customer'],['Monthly MIS','NPD review report','rpt-mis']
+  ].forEach(function(r){
+    html+='<div class="card" style="cursor:pointer;margin:0" onclick="showReport(\''+r[2]+'\')"><div style="font-size:13px;font-weight:700;margin-bottom:4px">'+r[0]+'</div><div style="font-size:12px;color:var(--text2)">'+r[1]+'</div></div>';
+  });
+  html+='</div><div id="rpt-out"></div>';
+  el.innerHTML=html;
+}
+
+function showReport(id){
+  var out=document.getElementById('rpt-out');
+  var today=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  var html='<div class="card"><div style="border-bottom:2px solid var(--blue);margin-bottom:1.25rem;padding-bottom:10px;display:flex;justify-content:space-between">'
+    +'<div><div style="font-size:16px;font-weight:700">Kumar Industries — NPD Report</div>'
+    +'<div style="font-size:12px;color:var(--text2)">Generated: '+today+' · IATF 16949 / ISO 9001</div></div>'
+    +'<button class="btn-outline no-print" onclick="window.print()">Print</button></div>';
+  if(id==='rpt-summary'){
+    html+='<div style="font-size:14px;font-weight:700;margin-bottom:1rem">NPD Summary Report</div>'
+      +'<table class="tbl"><thead><tr><th>Part Name</th><th>Customer</th><th>Status</th><th>Gate</th><th>Overall %</th><th>Target Date</th><th>Days Left</th></tr></thead><tbody>';
+    projects.forEach(function(p){
+      var d=dl(p.targetDate||'');
+      html+='<tr><td style="font-weight:600">'+p.partName+'<div style="font-size:11px;color:var(--text3)">'+p.partNo+'</div></td>'
+        +'<td>'+p.customer+'</td><td>'+badge(p.status||'enquiry')+'</td>'
+        +'<td>Gate '+((p.currentGate||0)+1)+': '+GATE_SHORT[p.currentGate||0]+'</td>'
+        +'<td>'+overallPct(p)+'%</td><td>'+(p.targetDate||'—')+'</td>'
+        +'<td style="color:'+(d<0?'var(--red)':d<30?'var(--amber)':'var(--text)')+'">'+( d>0?d+'d':'Overdue')+'</td></tr>';
+    });
+    html+='</tbody></table>';
+  } else if(id==='rpt-gates'){
+    html+='<div style="font-size:14px;font-weight:700;margin-bottom:1rem">Gate-wise Status Report</div>';
+    GATE_NAMES.forEach(function(gn,gi){
+      var atG=projects.filter(function(p){return (p.currentGate||0)===gi;});
+      html+='<div style="margin-bottom:1.25rem"><div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:8px">Gate '+(gi+1)+': '+gn+' ('+atG.length+')</div>';
+      if(atG.length){
+        html+='<table class="tbl"><thead><tr><th>Part</th><th>Customer</th><th>Checklist</th><th>Approval</th></tr></thead><tbody>';
+        atG.forEach(function(p){
+          var prog=gProg(p,gi),a=gApproval(p,gi);
+          html+='<tr><td style="font-weight:600">'+p.partName+'</td><td>'+p.customer+'</td>'
+            +'<td>'+prog.done+'/'+prog.total+' ('+prog.pct+'%)</td>'
+            +'<td>'+(a?'<span style="color:'+(a.status==='approved'?'var(--green)':'var(--amber)')+'">'+a.status+' — '+a.approverName+'</span>':'Pending')+'</td></tr>';
+        });
+        html+='</tbody></table>';
+      } else html+='<div style="font-size:12px;color:var(--text3);padding:6px 0">No projects at this gate.</div>';
+      html+='</div>';
+    });
+  } else if(id==='rpt-actions'){
+    var all=allOpenActs().sort(function(a,b){var pr={high:0,med:1,low:2};return (pr[a.priority]||1)-(pr[b.priority]||1);});
+    html+='<div style="font-size:14px;font-weight:700;margin-bottom:1rem">Open Actions — Owner-wise</div>';
+    OWNERS.forEach(function(owner){
+      var owns=all.filter(function(a){return a.owner===owner;});
+      if(owns.length){
+        html+='<div style="margin-bottom:1.25rem"><div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:8px">'+owner+' ('+owns.length+')</div>'
+          +'<table class="tbl"><thead><tr><th>Action</th><th>Project</th><th>Priority</th><th>Due</th></tr></thead><tbody>';
+        owns.forEach(function(a){
+          html+='<tr><td>'+a.text+'</td><td>'+a.partName+'</td><td><span class="pdot '+a.priority+'"></span> '+a.priority+'</td><td>'+a.due+'</td></tr>';
+        });
+        html+='</tbody></table></div>';
+      }
+    });
+  } else if(id==='rpt-ppap'){
+    html+='<div style="font-size:14px;font-weight:700;margin-bottom:1rem">PPAP Status Report</div>'
+      +'<table class="tbl"><thead><tr><th>Part</th><th>Customer</th><th>PPAP Level</th><th>Status</th><th>Gate 4 Progress</th></tr></thead><tbody>';
+    projects.forEach(function(p){
+      var prog=gProg(p,3);
+      html+='<tr><td style="font-weight:600">'+p.partName+'<div style="font-size:11px;color:var(--text3)">'+p.partNo+'</div></td>'
+        +'<td>'+p.customer+'</td><td>'+(p.ppapLevel||'—')+'</td><td>'+(p.ppapStatus||'—')+'</td>'
+        +'<td>'+prog.done+'/'+prog.total+' ('+prog.pct+'%)</td></tr>';
+    });
+    html+='</tbody></table>';
+  } else if(id==='rpt-customer'){
+    html+='<div style="font-size:14px;font-weight:700;margin-bottom:1rem">Customer-wise Report</div>';
+    CUSTOMERS.filter(function(c){return c!=='Other';}).forEach(function(cust){
+      var cp=projects.filter(function(p){return p.customer===cust;});
+      if(cp.length){
+        html+='<div style="margin-bottom:1.25rem"><div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:8px">'+cust+' ('+cp.length+')</div>'
+          +'<table class="tbl"><thead><tr><th>Part</th><th>Status</th><th>Overall %</th><th>Target Date</th></tr></thead><tbody>';
+        cp.forEach(function(p){
+          html+='<tr><td style="font-weight:600">'+p.partName+' ('+p.partNo+')</td><td>'+badge(p.status||'enquiry')+'</td><td>'+overallPct(p)+'%</td><td>'+(p.targetDate||'—')+'</td></tr>';
+        });
+        html+='</tbody></table></div>';
+      }
+    });
+  } else if(id==='rpt-mis'){
+    var mo=new Date().toLocaleString('default',{month:'long',year:'numeric'});
+    html+='<div style="font-size:14px;font-weight:700;margin-bottom:1rem">Monthly MIS Report — '+mo+'</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem">'
+      +'<div class="info-tile"><div class="info-key">Total Projects</div><div style="font-size:20px;font-weight:700">'+projects.length+'</div></div>'
+      +'<div class="info-tile"><div class="info-key">Open Actions</div><div style="font-size:20px;font-weight:700">'+allOpenActs().length+'</div></div>'
+      +'<div class="info-tile"><div class="info-key">At PPAP</div><div style="font-size:20px;font-weight:700">'+projects.filter(function(p){return p.status==='ppap';}).length+'</div></div>'
+      +'<div class="info-tile"><div class="info-key">Approved</div><div style="font-size:20px;font-weight:700">'+projects.filter(function(p){return p.status==='approved';}).length+'</div></div>'
+      +'</div>'
+      +'<table class="tbl"><thead><tr><th>Part</th><th>Customer</th><th>Gate</th><th>Status</th><th>%</th><th>Open Actions</th><th>Target Date</th></tr></thead><tbody>';
+    projects.forEach(function(p){
+      html+='<tr><td style="font-weight:600">'+p.partName+'</td><td>'+p.customer+'</td>'
+        +'<td>Gate '+((p.currentGate||0)+1)+': '+GATE_SHORT[p.currentGate||0]+'</td>'
+        +'<td>'+badge(p.status||'enquiry')+'</td><td>'+overallPct(p)+'%</td>'
+        +'<td style="color:'+(openActs(p).length>0?'var(--amber)':'var(--green)')+'">'+openActs(p).length+'</td>'
+        +'<td>'+(p.targetDate||'—')+'</td></tr>';
+    });
+    html+='</tbody></table>';
+  }
+  html+='</div>';
+  out.innerHTML=html;
+  out.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ── CUSTOMERS ─────────────────────────────────────────────────────────────
+function renderCustomers(){
+  var el=document.getElementById('pg-customers');
+  var canM=cu&&['balaji.j@kumarindus.com','aishwarya@kumarindus.com'].includes(cu.email);
+  var active=customers.filter(function(c){return c.status==='Active';}).length;
+  var oem=customers.filter(function(c){return c.category==='OEM';}).length;
+  var t1=customers.filter(function(c){return c.category==='Tier 1';}).length;
+  var html='<div class="topbar"><div><div class="page-title">Customer Database</div>'
+    +'<div class="page-sub">'+customers.length+' customers · Master data</div></div>'
+    +(canM?'<button class="btn-primary" onclick="openNewCustModal()">+ Add Customer</button>':'')
+    +'</div>'
+    +'<div class="stat-grid">'
+    +'<div class="stat-card"><div class="stat-lbl">Total</div><div class="stat-val" style="color:var(--blue)">'+customers.length+'</div></div>'
+    +'<div class="stat-card"><div class="stat-lbl">Active</div><div class="stat-val" style="color:var(--green)">'+active+'</div></div>'
+    +'<div class="stat-card"><div class="stat-lbl">OEM</div><div class="stat-val" style="color:var(--purple)">'+oem+'</div></div>'
+    +'<div class="stat-card"><div class="stat-lbl">Tier 1</div><div class="stat-val" style="color:var(--amber)">'+t1+'</div></div>'
+    +'</div>';
+  if(customers.length){
+    customers.forEach(function(c){
+      var catBg=c.category==='OEM'?'var(--purple-lt)':c.category==='Tier 1'?'var(--amber-lt)':'var(--bg2)';
+      var catTx=c.category==='OEM'?'var(--purple)':c.category==='Tier 1'?'var(--amber)':'var(--text2)';
+      html+='<div class="card" style="margin-bottom:1rem">'
+        +'<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:0.5px solid var(--border)">'
+        +'<div><div style="font-size:15px;font-weight:700">'+c.name
+        +'<span style="font-size:11px;background:var(--blue-lt);color:var(--blue-dk);padding:2px 8px;border-radius:10px;margin-left:6px">'+(c.shortCode||'—')+'</span>'
+        +'<span style="font-size:11px;background:'+catBg+';color:'+catTx+';padding:2px 8px;border-radius:10px;margin-left:4px">'+(c.category||'—')+'</span>'
+        +'<span style="font-size:11px;background:'+(c.status==='Active'?'var(--green-lt)':'var(--red-lt)')+';color:'+(c.status==='Active'?'var(--green)':'var(--red)')+';padding:2px 8px;border-radius:10px;margin-left:4px">'+(c.status||'Active')+'</span>'
+        +'</div><div style="font-size:12px;color:var(--text2);margin-top:3px">'+(c.city||'')+((c.city&&c.address)?', ':'')+( c.address||'')+'</div></div>'
+        +(canM?'<div style="display:flex;gap:8px"><button class="btn-outline" onclick="openEditCustModal(\''+c.id+'\')">Edit</button>'
+          +'<button class="btn-outline" style="color:var(--red);border-color:var(--red)" onclick="deleteCust(\''+c.id+'\',\''+c.name+'\')">Delete</button></div>':'')
+        +'</div>'
+        +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1rem">'
+        +'<div class="info-tile"><div class="info-key">Primary Contact</div><div class="info-val">'+(c.contactName||'—')+'</div><div style="font-size:11px;color:var(--text3)">'+(c.contactDesig||'')+'</div></div>'
+        +'<div class="info-tile"><div class="info-key">Phone</div><div class="info-val" style="font-size:12px">'+(c.contactPhone||'—')+'</div></div>'
+        +'<div class="info-tile"><div class="info-key">Email</div><div class="info-val" style="font-size:12px;word-break:break-all">'+(c.contactEmail||'—')+'</div></div>'
+        +'<div class="info-tile"><div class="info-key">Payment Terms</div><div class="info-val">'+(c.paymentTerms||'—')+'</div><div style="font-size:11px;color:var(--text3)">'+(c.creditDays?c.creditDays+' days':'')+'</div></div>'
+        +'</div>';
+      if((c.plants||[]).length){
+        html+='<div style="margin-bottom:0.75rem"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:6px">Plant Locations</div>'
+          +'<div style="display:flex;gap:8px;flex-wrap:wrap">';
+        c.plants.forEach(function(pl){html+='<span style="background:var(--bg2);border:0.5px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px">'+pl+'</span>';});
+        html+='</div></div>';
+      }
+      if(c.csrNotes) html+='<div style="background:var(--amber-lt);border-radius:8px;padding:10px 14px;font-size:12px;color:#633806"><strong>CSR / Quality Requirements:</strong> '+c.csrNotes+'</div>';
+      html+='</div>';
+    });
+  } else html+='<div class="card"><div class="empty">No customers added yet.</div></div>';
+  el.innerHTML=html;
+}
+
+// ── NPD INTERACTIONS ──────────────────────────────────────────────────────
+async function toggleCheck(pid,key){
+  if(!canEdit()){alert('You do not have edit access.');return;}
+  var p=projects.find(function(x){return x.id===pid;});
+  if(!p) return;
+  var g=parseInt(key.split('-')[0]);
+  if(isLocked(p,g)){alert('This gate is locked after approval.');return;}
+  if(g!==(p.currentGate||0)){alert('You can only update the active gate checklist.');return;}
+  var sk=safeKey(key);
+  var newVal=!((p.checklist||{})[sk]);
+  selId=pid;
+  var fields={};
+  fields['checklist.'+sk]=newVal;
+  await updateP(pid,fields);
+}
+
+async function markActDone(pid,idx){
+  if(!canEdit()) return;
+  var p=projects.find(function(x){return x.id===pid;});
+  if(!p) return;
+  var actions=JSON.parse(JSON.stringify(p.actions||[]));
+  var open=actions.filter(function(a){return !a.done;});
+  if(open[idx]) open[idx].done=true;
+  selId=pid;
+  await updateP(pid,{actions:actions});
+}
+
+async function deleteProj(pid,partName){
+  if(!cui||!cui.del){alert('Only NPD Head can delete projects.');return;}
+  if(!confirm('Delete "'+partName+'"? This cannot be undone.')) return;
+  if(!confirm('Final confirmation — delete permanently?')) return;
+  showSync(true);
+  try{await db.collection('projects').doc(pid).delete();selId=null;showSync(false);}
+  catch(e){console.error(e);showSync(false);alert('Delete failed: '+e.message);}
+}
+
+async function deleteDoc(pid,idx,filePath){
+  if(!confirm('Delete this document?')) return;
+  var p=projects.find(function(x){return x.id===pid;});
+  if(!p) return;
+  var documents=JSON.parse(JSON.stringify(p.documents||[]));
+  documents.splice(idx,1);
+  if(filePath){try{await storage.ref(filePath).delete();}catch(e){console.warn(e);}}
+  selId=pid;
+  await updateP(pid,{documents:documents});
+}
+
+// ── NPD MODALS ────────────────────────────────────────────────────────────
+function openApprovalModal(pid,gate){
+  var p=projects.find(function(x){return x.id===pid;});
+  var mr=document.getElementById('modal-root');
+  mr.innerHTML='<div class="modal-overlay"><div class="modal">'
+    +'<div class="modal-title">Gate '+(gate+1)+' Approval — '+p.partName+'</div>'
+    +'<div style="background:var(--blue-lt);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--blue-dk);margin-bottom:1rem">'
+    +'<strong>Required Approver:</strong> '+GATE_APPROVER_ROLES[gate]+' &nbsp;|&nbsp; <strong>Gate:</strong> '+GATE_NAMES[gate]+'</div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Approver Role</label><input id="ap-role" value="'+cui.r+'" readonly/></div>'
+    +'<div class="f-row"><label class="f-lbl">Approver Name *</label><input id="ap-name" placeholder="Your full name"/></div></div>'
+    +'<div class="f-row"><label class="f-lbl">Decision *</label>'
+    +'<select id="ap-dec"><option value="approved">Approved — proceed to next gate</option><option value="rejected">Rejected — send back for rework</option></select></div>'
+    +'<div class="f-row"><label class="f-lbl">Remark</label><textarea id="ap-rem" placeholder="Add your comments..."></textarea></div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Customer Approval Name</label><input id="ap-cn" placeholder="Optional"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Customer Approval Date</label><input id="ap-cd" type="date"/></div></div>'
+    +'<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button>'
+    +'<button class="btn-save" onclick="saveApproval(\''+pid+'\','+gate+')">Submit</button></div>'
+    +'</div></div>';
+  document.getElementById('ap-cd').value=new Date().toISOString().split('T')[0];
+}
+
+async function saveApproval(pid,gate){
+  var name=v('ap-name');
+  if(!name){alert('Approver name required.');return;}
+  var decision=v('ap-dec');
+  var remark=v('ap-rem');
+  var custName=v('ap-cn');
+  var custDate=v('ap-cd');
+  var p=projects.find(function(x){return x.id===pid;});
+  var today=new Date().toISOString().split('T')[0];
+  var approvals=JSON.parse(JSON.stringify((p.gateApprovals||[]).filter(function(a){return a.gate!==gate;})));
+  approvals.push({gate:gate,status:decision,approverRole:cui.r,approverName:name,date:today,remark:remark,
+    customerApproval:custName?{name:custName,date:custDate}:null});
+  var updates={gateApprovals:approvals};
+  if(decision==='approved'){
+    var gs=JSON.parse(JSON.stringify(p.gateStatus||[0,0,0,0,0]));
+    gs[gate]=2;
+    var sm={0:'enquiry',1:'apqp',2:'tooling',3:'ppap',4:'approved'};
+    if(gate<4){gs[gate+1]=1;updates.currentGate=gate+1;updates.status=sm[gate+1];}
+    else updates.status='approved';
+    updates.gateStatus=gs;
+  }
+  await updateP(pid,updates);
+  closeModal(); selId=pid;
+}
+
+function openActionModal(pid){
+  var p=projects.find(function(x){return x.id===pid;});
+  var oo=OWNERS.map(function(o){return '<option>'+o+'</option>';}).join('');
+  document.getElementById('modal-root').innerHTML='<div class="modal-overlay"><div class="modal" style="max-width:420px">'
+    +'<div class="modal-title">Add Action — '+p.partName+'</div>'
+    +'<div class="f-row"><label class="f-lbl">Action Description *</label><input id="a-text" placeholder="Describe the action required"/></div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Owner *</label><select id="a-own">'+oo+'</select></div>'
+    +'<div class="f-row"><label class="f-lbl">Priority *</label><select id="a-pri"><option value="high">High</option><option value="med" selected>Medium</option><option value="low">Low</option></select></div></div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Start Date</label><input id="a-start" type="date"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Due Date *</label><input id="a-due" type="date"/></div></div>'
+    +'<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button>'
+    +'<button class="btn-save" onclick="saveAction(\''+pid+'\')">Save</button></div></div></div>';
+  var td=new Date().toISOString().split('T')[0];
+  document.getElementById('a-start').value=td;
+  document.getElementById('a-due').value=td;
+}
+
+async function saveAction(pid){
+  var text=v('a-text'),owner=v('a-own'),priority=v('a-pri'),startDate=v('a-start'),due=v('a-due');
+  if(!text||!due){alert('Description and due date required.');return;}
+  var p=projects.find(function(x){return x.id===pid;});
+  var actions=JSON.parse(JSON.stringify(p.actions||[]));
+  actions.push({text:text,owner:owner,priority:priority,startDate:startDate,due:due,done:false,addedBy:cu.email,addedAt:new Date().toISOString()});
+  await updateP(pid,{actions:actions});
+  closeModal(); selId=pid;
+}
+
+function openTrialModal(pid){
+  var p=projects.find(function(x){return x.id===pid;});
+  var no=(p.trials||[]).length+1;
+  document.getElementById('modal-root').innerHTML='<div class="modal-overlay"><div class="modal">'
+    +'<div class="modal-title">Add Trial '+no+' — '+p.partName+'</div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Date *</label><input id="t-date" type="date"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Result *</label><select id="t-res"><option>Pass</option><option>Fail</option><option>Conditional</option></select></div></div>'
+    +'<div class="f-row"><label class="f-lbl">Dimension Check</label><select id="t-dim"><option value="true">OK</option><option value="false">NOT OK</option></select></div>'
+    +'<div class="f-row"><label class="f-lbl">Rejection Reason</label><input id="t-rej" placeholder="If Fail/Conditional"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Corrective Action</label><textarea id="t-cor" placeholder="Action taken"></textarea></div>'
+    +'<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button>'
+    +'<button class="btn-save" onclick="saveTrial(\''+pid+'\','+no+')">Save Trial</button></div></div></div>';
+  document.getElementById('t-date').value=new Date().toISOString().split('T')[0];
+}
+
+async function saveTrial(pid,no){
+  var date=v('t-date'),result=v('t-res'),dimOk=v('t-dim')==='true',rejReason=v('t-rej')||'—',corrAction=v('t-cor')||'—';
+  if(!date){alert('Date required.');return;}
+  var p=projects.find(function(x){return x.id===pid;});
+  var trials=JSON.parse(JSON.stringify(p.trials||[]));
+  trials.push({no:no,date:date,result:result,dimOk:dimOk,rejReason:rejReason,corrAction:corrAction});
+  await updateP(pid,{trials:trials});
+  closeModal(); selId=pid;
+}
+
+function openCommModal(pid){
+  var p=projects.find(function(x){return x.id===pid;});
+  var ct=COMM_TYPES.map(function(t){return '<option>'+t+'</option>';}).join('');
+  document.getElementById('modal-root').innerHTML='<div class="modal-overlay"><div class="modal" style="max-width:440px">'
+    +'<div class="modal-title">Add Communication — '+p.partName+'</div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Date *</label><input id="c-date" type="date"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Type *</label><select id="c-type">'+ct+'</select></div></div>'
+    +'<div class="f-row"><label class="f-lbl">Summary *</label><textarea id="c-sum" placeholder="What was discussed?"></textarea></div>'
+    +'<div class="f-row"><label class="f-lbl">Outcome</label><input id="c-out" placeholder="Decision or next step"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Recorded By</label><input id="c-by" placeholder="Your name"/></div>'
+    +'<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button>'
+    +'<button class="btn-save" onclick="saveComm(\''+pid+'\')">Save</button></div></div></div>';
+  document.getElementById('c-date').value=new Date().toISOString().split('T')[0];
+}
+
+async function saveComm(pid){
+  var summary=v('c-sum');
+  if(!summary){alert('Summary required.');return;}
+  var p=projects.find(function(x){return x.id===pid;});
+  var commLog=JSON.parse(JSON.stringify(p.commLog||[]));
+  commLog.push({date:v('c-date'),type:v('c-type'),summary:summary,outcome:v('c-out')||'—',by:v('c-by')||cu.email.split('@')[0]});
+  await updateP(pid,{commLog:commLog});
+  closeModal(); selId=pid;
+}
+
+function openRevModal(pid){
+  var p=projects.find(function(x){return x.id===pid;});
+  document.getElementById('modal-root').innerHTML='<div class="modal-overlay"><div class="modal" style="max-width:420px">'
+    +'<div class="modal-title">Add Drawing Revision — '+p.partName+'</div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Revision *</label><input id="r-rev" placeholder="e.g. D"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Date *</label><input id="r-date" type="date"/></div></div>'
+    +'<div class="f-row"><label class="f-lbl">Changes Made *</label><textarea id="r-chg" placeholder="What changed?"></textarea></div>'
+    +'<div class="f-row"><label class="f-lbl">Approved By</label><input id="r-by" placeholder="Approver name"/></div>'
+    +'<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button>'
+    +'<button class="btn-save" onclick="saveRev(\''+pid+'\')">Save</button></div></div></div>';
+  document.getElementById('r-date').value=new Date().toISOString().split('T')[0];
+}
+
+async function saveRev(pid){
+  var rev=v('r-rev').toUpperCase(),changes=v('r-chg');
+  if(!rev||!changes){alert('Revision and changes required.');return;}
+  var p=projects.find(function(x){return x.id===pid;});
+  var dr=JSON.parse(JSON.stringify(p.drawingRevisions||[]));
+  dr.push({rev:rev,date:v('r-date'),changes:changes,approvedBy:v('r-by')||'NPD'});
+  await updateP(pid,{drawingRevisions:dr,drawingRev:rev});
+  closeModal(); selId=pid;
+}
+
+function openDocModal(pid){
+  var p=projects.find(function(x){return x.id===pid;});
+  var go=GATE_SHORT.map(function(g,i){return '<option value="'+i+'">Gate '+(i+1)+': '+g+'</option>';}).join('');
+  document.getElementById('modal-root').innerHTML='<div class="modal-overlay"><div class="modal" style="max-width:480px">'
+    +'<div class="modal-title">Upload Document — '+p.partName+'</div>'
+    +'<div class="f-row"><label class="f-lbl">Document Name *</label><input id="d-name" placeholder="e.g. PFMEA Rev A"/></div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Gate</label><select id="d-gate">'+go+'</select></div>'
+    +'<div class="f-row"><label class="f-lbl">Document Type</label>'
+    +'<select id="d-type"><option>Drawing</option><option>PFMEA</option><option>DFMEA</option><option>Control Plan</option><option>PPAP</option><option>Feasibility Report</option><option>Trial Report</option><option>Material Certificate</option><option>PSW</option><option>Other</option></select></div></div>'
+    +'<div class="f-row"><label class="f-lbl">Upload PDF * (Max 10MB)</label>'
+    +'<input type="file" id="d-file" accept=".pdf" style="width:100%;border:0.5px solid var(--border2);border-radius:8px;padding:8px;font-size:13px;cursor:pointer"/></div>'
+    +'<div id="d-prog-wrap" style="display:none;background:var(--bg2);border-radius:8px;padding:12px;margin-top:8px">'
+    +'<div style="font-size:12px;font-weight:600" id="d-status">Uploading...</div>'
+    +'<div class="upload-bar-wrap"><div class="upload-bar-fill" id="d-bar" style="width:0%"></div></div>'
+    +'<div style="font-size:11px;color:var(--text3)" id="d-pct">0%</div></div>'
+    +'<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button>'
+    +'<button class="btn-save" id="d-btn" onclick="uploadDoc(\''+pid+'\')">Upload PDF</button></div></div></div>';
+}
+
+async function uploadDoc(pid){
+  var name=v('d-name'),gate=parseInt(v('d-gate')),type=v('d-type');
+  var file=document.getElementById('d-file').files[0];
+  if(!name){alert('Document name required.');return;}
+  if(!file){alert('Please select a PDF file.');return;}
+  if(file.type!=='application/pdf'){alert('Only PDF files allowed.');return;}
+  if(file.size>10*1024*1024){alert('File exceeds 10MB limit.');return;}
+  var btn=document.getElementById('d-btn');
+  btn.disabled=true; btn.textContent='Uploading...';
+  document.getElementById('d-prog-wrap').style.display='block';
+  var safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+  var filePath='projects/'+pid+'/'+Date.now()+'_'+safeName;
+  var task=storage.ref(filePath).put(file,{contentType:'application/pdf'});
+  task.on('state_changed',
+    function(snap){
+      var pct=Math.round(snap.bytesTransferred/snap.totalBytes*100);
+      document.getElementById('d-bar').style.width=pct+'%';
+      document.getElementById('d-pct').textContent=pct+'%';
+      document.getElementById('d-status').textContent='Uploading... '+pct+'%';
+    },
+    function(err){
+      document.getElementById('d-status').textContent='Failed: '+err.message;
+      btn.disabled=false; btn.textContent='Retry';
+    },
+    async function(){
+      var url=await task.snapshot.ref.getDownloadURL();
+      var p=projects.find(function(x){return x.id===pid;});
+      var documents=JSON.parse(JSON.stringify(p.documents||[]));
+      documents.push({name:name,gate:gate,type:type,url:url,filePath:filePath,
+        fileName:file.name,fileSize:(file.size/1024).toFixed(0)+'KB',
+        addedBy:cu.email,date:new Date().toISOString().split('T')[0]});
+      await updateP(pid,{documents:documents});
+      document.getElementById('d-status').textContent='&#10003; Upload complete!';
+      setTimeout(function(){closeModal();selId=pid;},800);
+    }
+  );
+}
+
+function openNewProjModal(){
+  if(!cui||!cui.addP){alert('You do not have permission to add projects.');return;}
+  var co=CUSTOMERS.map(function(c){return '<option>'+c+'</option>';}).join('');
+  var pl=PPAP_LEVELS.map(function(l){return '<option>'+l+'</option>';}).join('');
+  document.getElementById('modal-root').innerHTML='<div class="modal-overlay"><div class="modal">'
+    +'<div class="modal-title">Add New NPD Project</div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Part Name *</label><input id="np-name" placeholder="e.g. Front Bracket Assy"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Part Number *</label><input id="np-no" placeholder="e.g. KI-AL-0001"/></div></div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Drawing Rev</label><input id="np-rev" placeholder="A"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Customer *</label><select id="np-cust"><option value="">Select</option>'+co+'</select></div></div>'
+    +'<div class="f-3col"><div class="f-row"><label class="f-lbl">Target Price (&#8377;)</label><input id="np-tp" type="number" placeholder="0"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Quoted Price (&#8377;)</label><input id="np-qp" type="number" placeholder="0"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Tooling Cost (&#8377;)</label><input id="np-tc" type="number" placeholder="0"/></div></div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Start Date</label><input id="np-sd" type="date"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Target Date</label><input id="np-td" type="date"/></div></div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">PPAP Level</label><select id="np-ppap">'+pl+'</select></div>'
+    +'<div class="f-row"><label class="f-lbl">Deviations / Notes</label><input id="np-dev" placeholder="None"/></div></div>'
+    +'<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button>'
+    +'<button class="btn-save" onclick="saveNewProj()">Create Project</button></div></div></div>';
+  document.getElementById('np-sd').value=new Date().toISOString().split('T')[0];
+}
+
+async function saveNewProj(){
+  if(!v('np-name')||!v('np-cust')){alert('Part Name and Customer required.');return;}
+  var today=new Date().toISOString().split('T')[0];
+  var rev=v('np-rev')||'A';
+  var data={
+    partName:v('np-name'),partNo:v('np-no')||'KI-000',drawingRev:rev,customer:v('np-cust'),
+    status:'enquiry',targetPrice:parseFloat(v('np-tp'))||0,quotedPrice:parseFloat(v('np-qp'))||0,
+    toolingCost:parseFloat(v('np-tc'))||0,toolingActual:0,startDate:v('np-sd')||today,
+    targetDate:v('np-td')||today,ppapLevel:v('np-ppap')||'Level 3',ppapStatus:'Not started',
+    deviations:v('np-dev')||'None',currentGate:0,gateStatus:[1,0,0,0,0],checklist:makeChecklist(),
+    gateApprovals:[],actions:[],trials:[],commLog:[],
+    drawingRevisions:[{rev:rev,date:today,changes:'Initial release',approvedBy:cu.email.split('@')[0]}],
+    documents:[],createdAt:firebase.firestore.FieldValue.serverTimestamp(),createdBy:cu.email
+  };
+  showSync(true);
+  try{await db.collection('projects').add(data);showSync(false);closeModal();}
+  catch(e){console.error(e);showSync(false);alert('Save failed: '+e.message);}
+}
+
+// ── KAIZEN INTERACTIONS ───────────────────────────────────────────────────
+async function toggleKzCheck(kid,idx){
+  var k=kaizens.find(function(x){return x.id===kid;});
+  if(!k) return;
+  var checklist=JSON.parse(JSON.stringify(k.checklist||[]));
+  checklist[idx]=Object.assign({},checklist[idx],{done:!checklist[idx].done});
+  selKid=kid;
+  await updateK(kid,{checklist:checklist});
+}
+
+async function markKzActDone(kid,idx){
+  var k=kaizens.find(function(x){return x.id===kid;});
+  if(!k) return;
+  var kActions=JSON.parse(JSON.stringify(k.kActions||[]));
+  var open=kActions.filter(function(a){return !a.done;});
+  if(open[idx]) open[idx].done=true;
+  selKid=kid;
+  await updateK(kid,{kActions:kActions});
+}
+
+async function deleteKz(kid,title){
+  if(!cui||!cui.del){alert('Only NPD Head can delete.');return;}
+  if(!confirm('Delete "'+title+'"? Cannot be undone.')) return;
+  if(!confirm('Final confirmation?')) return;
+  await db.collection('kaizen_projects').doc(kid).delete();
+  selKid=null;
+}
+
+async function deleteKzDoc(kid,idx,filePath){
+  if(!confirm('Delete this document?')) return;
+  var k=kaizens.find(function(x){return x.id===kid;});
+  var documents=JSON.parse(JSON.stringify(k.documents||[]));
+  documents.splice(idx,1);
+  if(filePath){try{await storage.ref(filePath).delete();}catch(e){console.warn(e);}}
+  selKid=kid;
+  await updateK(kid,{documents:documents});
+}
+
+// ── KAIZEN MODALS ─────────────────────────────────────────────────────────
+function openNewKzModal(){
+  if(!cui||!cui.addK){alert('You do not have permission.');return;}
+  var uo=ALL_USERS.map(function(u){return '<option value="'+u.n+' ('+u.r+')">'+u.n+' — '+u.r+'</option>';}).join('');
+  var co=KZ_CATS.map(function(c){return '<option>'+c+'</option>';}).join('');
+  var dpo=KZ_DEPTS.map(function(d){return '<option>'+d+'</option>';}).join('');
+  document.getElementById('modal-root').innerHTML='<div class="modal-overlay"><div class="modal">'
+    +'<div class="modal-title">New Kaizen Project</div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Project Title *</label><input id="kz-title" placeholder="e.g. Reduce cycle time on Line 3"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Category *</label><select id="kz-cat">'+co+'</select></div></div>'
+    +'<div class="f-row"><label class="f-lbl">Problem Statement *</label><textarea id="kz-prob" placeholder="Describe the problem or improvement opportunity..."></textarea></div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Department *</label><select id="kz-dept">'+dpo+'</select></div>'
+    +'<div class="f-row"><label class="f-lbl">Target Completion Date</label><input id="kz-date" type="date"/></div></div>'
+    +'<div class="f-row"><label class="f-lbl">Estimated Savings / Benefits</label><input id="kz-sav" placeholder="e.g. &#8377;50,000/month or 15% efficiency gain"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Team Members</label>'
+    +'<select id="kz-team" multiple style="height:120px">'+uo+'</select>'
+    +'<div style="font-size:11px;color:var(--text3);margin-top:4px">Hold Ctrl (Windows) or Cmd (Mac) to select multiple</div></div>'
+    +'<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button>'
+    +'<button class="btn-save" style="background:var(--teal)" onclick="saveNewKz()">Create Kaizen Project</button></div></div></div>';
+}
+
+async function saveNewKz(){
+  if(!v('kz-title')||!v('kz-prob')){alert('Title and Problem Statement required.');return;}
+  var sel=document.getElementById('kz-team');
+  var team=Array.from(sel.selectedOptions).map(function(o){return o.value;});
+  var data={
+    title:v('kz-title'),category:v('kz-cat'),problemStatement:v('kz-prob'),
+    department:v('kz-dept'),targetDate:v('kz-date'),savings:v('kz-sav'),
+    teamMembers:team,status:'Open',checklist:[],kActions:[],documents:[],commLog:[],
+    createdAt:firebase.firestore.FieldValue.serverTimestamp(),createdBy:cu.email
+  };
+  showSync(true);
+  try{await db.collection('kaizen_projects').add(data);showSync(false);closeModal();setPage('kaizen',null);}
+  catch(e){console.error(e);showSync(false);alert('Save failed: '+e.message);}
+}
+
+function openKzStatusModal(kid){
+  var k=kaizens.find(function(x){return x.id===kid;});
+  var so=KZ_STATUSES.map(function(s){return '<option'+(s===k.status?' selected':'')+'>'+s+'</option>';}).join('');
+  document.getElementById('modal-root').innerHTML='<div class="modal-overlay"><div class="modal" style="max-width:420px">'
+    +'<div class="modal-title">Update Status — '+k.title+'</div>'
+    +'<div class="f-row"><label class="f-lbl">New Status</label><select id="ks-st">'+so+'</select></div>'
+    +'<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button>'
+    +'<button class="btn-save" style="background:var(--teal)" onclick="saveKzStatus(\''+kid+'\')">Update</button></div></div></div>';
+}
+
+async function saveKzStatus(kid){
+  await updateK(kid,{status:v('ks-st')});
+  closeModal(); selKid=kid;
+}
+
+function openKzCheckModal(kid){
+  var k=kaizens.find(function(x){return x.id===kid;});
+  document.getElementById('modal-root').innerHTML='<div class="modal-overlay"><div class="modal" style="max-width:420px">'
+    +'<div class="modal-title">Add Checklist Item — '+k.title+'</div>'
+    +'<div class="f-row"><label class="f-lbl">Checklist Item *</label><input id="kc-item" placeholder="e.g. Complete root cause analysis"/></div>'
+    +'<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button>'
+    +'<button class="btn-save" style="background:var(--teal)" onclick="saveKzCheck(\''+kid+'\')">Add Item</button></div></div></div>';
+  setTimeout(function(){document.getElementById('kc-item').focus();},100);
+}
+
+async function saveKzCheck(kid){
+  var text=v('kc-item');
+  if(!text){alert('Item text required.');return;}
+  var k=kaizens.find(function(x){return x.id===kid;});
+  var checklist=JSON.parse(JSON.stringify(k.checklist||[]));
+  checklist.push({text:text,done:false,addedBy:cu.email.split('@')[0],addedAt:new Date().toISOString()});
+  await updateK(kid,{checklist:checklist});
+  closeModal(); selKid=kid;
+}
+
+function openKzActionModal(kid){
+  var k=kaizens.find(function(x){return x.id===kid;});
+  var oo=ALL_USERS.map(function(u){return '<option>'+u.n+'</option>';}).join('');
+  document.getElementById('modal-root').innerHTML='<div class="modal-overlay"><div class="modal" style="max-width:420px">'
+    +'<div class="modal-title">Add Action — '+k.title+'</div>'
+    +'<div class="f-row"><label class="f-lbl">Action Description *</label><input id="ka-text" placeholder="Describe the action required"/></div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Owner *</label><select id="ka-own">'+oo+'</select></div>'
+    +'<div class="f-row"><label class="f-lbl">Priority *</label><select id="ka-pri"><option value="high">High</option><option value="med" selected>Medium</option><option value="low">Low</option></select></div></div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Start Date</label><input id="ka-start" type="date"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Due Date *</label><input id="ka-due" type="date"/></div></div>'
+    +'<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button>'
+    +'<button class="btn-save" style="background:var(--teal)" onclick="saveKzAction(\''+kid+'\')">Save Action</button></div></div></div>';
+  var td=new Date().toISOString().split('T')[0];
+  document.getElementById('ka-start').value=td;
+  document.getElementById('ka-due').value=td;
+}
+
+async function saveKzAction(kid){
+  var text=v('ka-text'),owner=v('ka-own'),priority=v('ka-pri'),startDate=v('ka-start'),due=v('ka-due');
+  if(!text||!due){alert('Description and due date required.');return;}
+  var k=kaizens.find(function(x){return x.id===kid;});
+  var kActions=JSON.parse(JSON.stringify(k.kActions||[]));
+  kActions.push({text:text,owner:owner,priority:priority,startDate:startDate,due:due,done:false,addedBy:cu.email});
+  await updateK(kid,{kActions:kActions});
+  closeModal(); selKid=kid;
+}
+
+function openKzDocModal(kid){
+  var k=kaizens.find(function(x){return x.id===kid;});
+  document.getElementById('modal-root').innerHTML='<div class="modal-overlay"><div class="modal" style="max-width:460px">'
+    +'<div class="modal-title">Upload Document — '+k.title+'</div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Document Name *</label><input id="kd-name" placeholder="e.g. Before/After Photos"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Type</label>'
+    +'<select id="kd-type"><option>Before/After Photo</option><option>Root Cause Analysis</option><option>Implementation Report</option><option>Verification Report</option><option>Data Sheet</option><option>Other</option></select></div></div>'
+    +'<div class="f-row"><label class="f-lbl">Upload PDF * (Max 10MB)</label>'
+    +'<input type="file" id="kd-file" accept=".pdf" style="width:100%;border:0.5px solid var(--border2);border-radius:8px;padding:8px;font-size:13px;cursor:pointer"/></div>'
+    +'<div id="kd-prog-wrap" style="display:none;background:var(--bg2);border-radius:8px;padding:12px;margin-top:8px">'
+    +'<div style="font-size:12px;font-weight:600" id="kd-status">Uploading...</div>'
+    +'<div class="upload-bar-wrap"><div class="upload-bar-fill" id="kd-bar" style="width:0%;background:var(--teal)"></div></div>'
+    +'<div style="font-size:11px;color:var(--text3)" id="kd-pct">0%</div></div>'
+    +'<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button>'
+    +'<button class="btn-save" id="kd-btn" style="background:var(--teal)" onclick="uploadKzDoc(\''+kid+'\')">Upload PDF</button></div></div></div>';
+}
+
+async function uploadKzDoc(kid){
+  var name=v('kd-name'),type=v('kd-type');
+  var file=document.getElementById('kd-file').files[0];
+  if(!name){alert('Document name required.');return;}
+  if(!file){alert('Please select a PDF file.');return;}
+  if(file.type!=='application/pdf'){alert('Only PDF files allowed.');return;}
+  if(file.size>10*1024*1024){alert('File exceeds 10MB limit.');return;}
+  var btn=document.getElementById('kd-btn');
+  btn.disabled=true; btn.textContent='Uploading...';
+  document.getElementById('kd-prog-wrap').style.display='block';
+  var safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+  var filePath='kaizen/'+kid+'/'+Date.now()+'_'+safeName;
+  var task=storage.ref(filePath).put(file,{contentType:'application/pdf'});
+  task.on('state_changed',
+    function(snap){
+      var pct=Math.round(snap.bytesTransferred/snap.totalBytes*100);
+      document.getElementById('kd-bar').style.width=pct+'%';
+      document.getElementById('kd-pct').textContent=pct+'%';
+      document.getElementById('kd-status').textContent='Uploading... '+pct+'%';
+    },
+    function(err){document.getElementById('kd-status').textContent='Failed: '+err.message;btn.disabled=false;btn.textContent='Retry';},
+    async function(){
+      var url=await task.snapshot.ref.getDownloadURL();
+      var k=kaizens.find(function(x){return x.id===kid;});
+      var documents=JSON.parse(JSON.stringify(k.documents||[]));
+      documents.push({name:name,type:type,url:url,filePath:filePath,
+        fileName:file.name,fileSize:(file.size/1024).toFixed(0)+'KB',
+        addedBy:cu.email,date:new Date().toISOString().split('T')[0]});
+      await updateK(kid,{documents:documents});
+      document.getElementById('kd-status').textContent='&#10003; Upload complete!';
+      setTimeout(function(){closeModal();selKid=kid;},800);
+    }
+  );
+}
+
+function openKzCommModal(kid){
+  var k=kaizens.find(function(x){return x.id===kid;});
+  var ct=COMM_TYPES.map(function(t){return '<option>'+t+'</option>';}).join('');
+  document.getElementById('modal-root').innerHTML='<div class="modal-overlay"><div class="modal" style="max-width:440px">'
+    +'<div class="modal-title">Add Communication — '+k.title+'</div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Date *</label><input id="kc-date" type="date"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Type</label><select id="kc-type">'+ct+'</select></div></div>'
+    +'<div class="f-row"><label class="f-lbl">Summary *</label><textarea id="kc-sum" placeholder="What was discussed?"></textarea></div>'
+    +'<div class="f-row"><label class="f-lbl">Outcome</label><input id="kc-out" placeholder="Decision or next step"/></div>'
+    +'<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button>'
+    +'<button class="btn-save" style="background:var(--teal)" onclick="saveKzComm(\''+kid+'\')">Save</button></div></div></div>';
+  document.getElementById('kc-date').value=new Date().toISOString().split('T')[0];
+}
+
+async function saveKzComm(kid){
+  var summary=v('kc-sum');
+  if(!summary){alert('Summary required.');return;}
+  var k=kaizens.find(function(x){return x.id===kid;});
+  var by=cu.email.split('@')[0].replace(/\./g,' ');
+  var commLog=JSON.parse(JSON.stringify(k.commLog||[]));
+  commLog.push({date:v('kc-date'),type:v('kc-type'),summary:summary,outcome:v('kc-out')||'—',by:by});
+  await updateK(kid,{commLog:commLog});
+  closeModal(); selKid=kid;
+}
+
+// ── CUSTOMER MODALS ───────────────────────────────────────────────────────
+function custModalHTML(c){
+  var opts=function(arr,val){return arr.map(function(o){return '<option'+(o===val?' selected':'')+'>'+o+'</option>';}).join('');};
+  return '<div class="f-2col"><div class="f-row"><label class="f-lbl">Customer Name *</label><input id="cu-name" value="'+(c&&c.name||'')+'"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Short Code *</label><input id="cu-code" value="'+(c&&c.shortCode||'')+'"/></div></div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Category</label><select id="cu-cat">'+opts(['OEM','Tier 1','Tier 2','Other'],c&&c.category)+'</select></div>'
+    +'<div class="f-row"><label class="f-lbl">Status</label><select id="cu-status">'+opts(['Active','Inactive'],c&&c.status)+'</select></div></div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">City</label><input id="cu-city" value="'+(c&&c.city||'')+'"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Address</label><input id="cu-addr" value="'+(c&&c.address||'')+'"/></div></div>'
+    +'<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;margin:10px 0 8px">Primary Contact</div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Contact Name</label><input id="cu-cname" value="'+(c&&c.contactName||'')+'"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Designation</label><input id="cu-cdesig" value="'+(c&&c.contactDesig||'')+'"/></div></div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Phone</label><input id="cu-cphone" value="'+(c&&c.contactPhone||'')+'"/></div>'
+    +'<div class="f-row"><label class="f-lbl">Email</label><input id="cu-cemail" value="'+(c&&c.contactEmail||'')+'"/></div></div>'
+    +'<div class="f-row"><label class="f-lbl">Plants (comma separated)</label><input id="cu-plants" value="'+(c&&(c.plants||[]).join(', ')||'')+'"/></div>'
+    +'<div class="f-2col"><div class="f-row"><label class="f-lbl">Payment Terms</label><select id="cu-pay">'+opts(['Advance','30 days','45 days','60 days','90 days','LC','Other'],c&&c.paymentTerms)+'</select></div>'
+    +'<div class="f-row"><label class="f-lbl">Credit Days</label><input id="cu-credit" type="number" value="'+(c&&c.creditDays||'')+'"/></div></div>'
+    +'<div class="f-row"><label class="f-lbl">CSR / Quality Requirements</label><textarea id="cu-csr">'+(c&&c.csrNotes||'')+'</textarea></div>';
+}
+
+function openNewCustModal(){
+  document.getElementById('modal-root').innerHTML='<div class="modal-overlay"><div class="modal">'
+    +'<div class="modal-title">Add New Customer</div>'+custModalHTML(null)
+    +'<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button>'
+    +'<button class="btn-save" onclick="saveCust()">Save Customer</button></div></div></div>';
+}
+
+function openEditCustModal(cid){
+  var c=customers.find(function(x){return x.id===cid;});
+  if(!c) return;
+  document.getElementById('modal-root').innerHTML='<div class="modal-overlay"><div class="modal">'
+    +'<div class="modal-title">Edit Customer — '+c.name+'</div>'+custModalHTML(c)
+    +'<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button>'
+    +'<button class="btn-save" onclick="saveCust(\''+cid+'\')">Update Customer</button></div></div></div>';
+}
+
+async function saveCust(editId){
+  if(!v('cu-name')||!v('cu-code')){alert('Name and short code required.');return;}
+  var plants=v('cu-plants')?v('cu-plants').split(',').map(function(p){return p.trim();}).filter(Boolean):[];
+  var data={name:v('cu-name'),shortCode:v('cu-code').toUpperCase(),category:v('cu-cat'),status:v('cu-status'),
+    city:v('cu-city'),address:v('cu-addr'),contactName:v('cu-cname'),contactDesig:v('cu-cdesig'),
+    contactPhone:v('cu-cphone'),contactEmail:v('cu-cemail'),plants:plants,paymentTerms:v('cu-pay'),
+    creditDays:parseInt(v('cu-credit'))||0,csrNotes:v('cu-csr')};
+  showSync(true);
+  try{
+    if(editId) await db.collection('customers_db').doc(editId).update(data);
+    else{data.createdAt=firebase.firestore.FieldValue.serverTimestamp();data.createdBy=cu.email;await db.collection('customers_db').add(data);}
+    showSync(false); closeModal();
+  }catch(e){console.error(e);showSync(false);alert('Save failed: '+e.message);}
+}
+
+async function deleteCust(cid,name){
+  if(!['balaji.j@kumarindus.com','aishwarya@kumarindus.com'].includes(cu.email)){alert('Permission denied.');return;}
+  if(!confirm('Delete customer "'+name+'"?')) return;
+  showSync(true);
+  try{await db.collection('customers_db').doc(cid).delete();showSync(false);}
+  catch(e){console.error(e);showSync(false);}
+}
+
+function closeModal(){document.getElementById('modal-root').innerHTML='';}
+
+</script>
+</body>
+</html>
